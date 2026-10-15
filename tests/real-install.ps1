@@ -9,6 +9,32 @@ $base = "http://127.0.0.1:$port/api"
 $h = @{ 'X-AIStation-Token' = $token }
 function Post($path, $body) { Invoke-RestMethod -Method Post -Uri "$base/$path" -Headers $h -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes(($body | ConvertTo-Json -Depth 5 -Compress))) }
 function State { Invoke-RestMethod -Uri "$base/state" -Headers $h }
+Add-Type @'
+using System; using System.Text; using System.Collections.Generic; using System.Runtime.InteropServices;
+public static class Win {
+  delegate bool EnumProc(IntPtr h, IntPtr l);
+  [DllImport("user32.dll")] static extern bool EnumWindows(EnumProc f, IntPtr l);
+  [DllImport("user32.dll")] static extern bool EnumChildWindows(IntPtr p, EnumProc f, IntPtr l);
+  [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr h);
+  [DllImport("user32.dll", CharSet=CharSet.Unicode)] static extern int GetWindowText(IntPtr h, StringBuilder s, int n);
+  [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
+  public static List<string> List() {
+    var r = new List<string>();
+    EnumWindows((h, l) => {
+      if (!IsWindowVisible(h)) return true;
+      uint pid; GetWindowThreadProcessId(h, out pid);
+      var sb = new StringBuilder(512); GetWindowText(h, sb, 512);
+      string name = ""; try { name = System.Diagnostics.Process.GetProcessById((int)pid).ProcessName; } catch {}
+      if (!name.StartsWith("Un_", StringComparison.OrdinalIgnoreCase)) return true;
+      var texts = new List<string>();
+      EnumChildWindows(h, (c, l2) => { var t = new StringBuilder(512); GetWindowText(c, t, 512); if (t.Length > 0) texts.Add(t.ToString()); return true; }, IntPtr.Zero);
+      r.Add(name + " | " + sb + " | " + string.Join(" / ", texts));
+      return true;
+    }, IntPtr.Zero);
+    return r;
+  }
+}
+'@
 function WaitJobs {
     for ($i = 0; $i -lt 360; $i++) {
         Start-Sleep 5
@@ -16,6 +42,7 @@ function WaitJobs {
         $active = @($s.jobs | Where-Object { $_.status -eq 'queued' -or $_.status -eq 'running' })
         if ($active.Count -eq 0 -and -not $s.scanning) { return $s }
         $j = $active[0]; Write-Host ("  {0} {1} {2} {3}" -f $j.action, $j.status, $j.message, $j.progress)
+        if ($j.action -eq 'uninstall') { [Win]::List() | ForEach-Object { Write-Host "    窗口：$_" } }
     }
     throw '任务超时'
 }
