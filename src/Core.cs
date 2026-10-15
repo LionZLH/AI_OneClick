@@ -327,7 +327,7 @@ namespace AIStation
 
         private static readonly string[] ProfileKeys =
         {
-            "onboarded", "answers", "recommendation", "webShortcuts", "hiddenApps", "trayHintShown", "theme", "disclaimerAccepted", "installPromptDismissed"
+            "onboarded", "answers", "recommendation", "webShortcuts", "hiddenApps", "trayHintShown", "theme", "disclaimerAccepted"
         };
 
         public void PatchProfile(Dictionary<string, object> patch)
@@ -624,10 +624,10 @@ namespace AIStation
             var sys = new Dictionary<string, object>();
             sys["autostart"] = Autostart.IsEnabled();
             sys["dataDir"] = Paths.DataDir;
-            sys["exe"] = SelfInstall.CurrentExe;
-            sys["selfInstalled"] = SelfInstall.IsInstalled;
-            sys["runningInstalled"] = SelfInstall.RunningFromInstallDir;
-            sys["installDir"] = SelfInstall.InstallDir;
+            sys["exe"] = Portable.ExePath;
+            sys["dataNextToExe"] = Portable.DataNextToExe;
+            sys["removable"] = Portable.OnRemovableDrive;
+            sys["desktopShortcut"] = Portable.DesktopShortcutOk;
             sys["windows"] = Environment.OSVersion.Platform == PlatformID.Win32NT;
             d["system"] = sys;
             return d;

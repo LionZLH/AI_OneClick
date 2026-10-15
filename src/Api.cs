@@ -89,31 +89,12 @@ namespace AIStation
                     d["path"] = file;
                     return HttpResponse.JsonOf(d);
                 }
-                case "self-install":
+                case "desktop-shortcut":
+                    return Result(Portable.CreateDesktopShortcut());
+                case "clear-data":
                 {
-                    var err = SelfInstall.Install(Program.Version);
-                    var d = new Dictionary<string, object>();
-                    d["ok"] = SelfInstall.IsInstalled;
-                    d["warning"] = err;
-                    d["relaunch"] = false;
-                    if (SelfInstall.IsInstalled && !SelfInstall.RunningFromInstallDir && Program.ExitRequested != null)
-                    {
-                        // 从新位置重新启动，当前进程在响应发出后退出
-                        try
-                        {
-                            SelfInstall.RelaunchInstalled();
-                            d["relaunch"] = true;
-                            var exit = Program.ExitRequested;
-                            new System.Threading.Thread(() => { System.Threading.Thread.Sleep(800); exit(); }) { IsBackground = true }.Start();
-                        }
-                        catch (Exception ex) { d["warning"] = "已安装，但无法从新位置启动：" + ex.Message; }
-                    }
-                    return HttpResponse.JsonOf(d);
-                }
-                case "quit":
-                {
-                    var exit = Program.ExitRequested;
-                    if (exit != null) new System.Threading.Thread(() => { System.Threading.Thread.Sleep(300); exit(); }) { IsBackground = true }.Start();
+                    if (Program.ExitRequested == null) return HttpResponse.Error(400, "仅在正常运行时可用");
+                    new System.Threading.Thread(() => { System.Threading.Thread.Sleep(500); Portable.ClearDataAndExit(); }) { IsBackground = true }.Start();
                     return Ok();
                 }
                 case "local-models":

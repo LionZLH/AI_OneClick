@@ -76,6 +76,24 @@ namespace AIStation
         private const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
         private const string Name = "AIStation";
 
+        /// <summary>开机自启登记的 exe 路径；未开启时返回 null。</summary>
+        public static string RegisteredExe()
+        {
+            try
+            {
+                using (var k = Registry.CurrentUser.OpenSubKey(RunKey))
+                {
+                    var v = k == null ? null : k.GetValue(Name) as string;
+                    if (string.IsNullOrEmpty(v)) return null;
+                    v = v.Trim();
+                    if (v.StartsWith("\"")) { var end = v.IndexOf('"', 1); return end > 0 ? v.Substring(1, end - 1) : v.Trim('"'); }
+                    var exe = v.IndexOf(".exe", StringComparison.OrdinalIgnoreCase);
+                    return exe > 0 ? v.Substring(0, exe + 4) : v;
+                }
+            }
+            catch (Exception) { return null; }
+        }
+
         public static bool IsEnabled()
         {
             try

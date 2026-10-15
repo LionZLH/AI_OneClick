@@ -551,3 +551,5 @@ code.cmd { padding: 2px 6px; border-radius: 6px; background: var(--surface-2); f
 .more-tiers .row { margin-top: 10px; }
 .boot svg { width: 20px; height: 20px; color: var(--success); }
 .boot { text-align: center; line-height: 1.9; }
+
+ul.plain { margin: 0 0 8px; padding-left: 18px; color: var(--text-2); font-size: 13.5px; display: flex; flex-direction: column; gap: 4px; }

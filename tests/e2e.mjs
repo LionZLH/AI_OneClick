@@ -217,6 +217,8 @@ async function main() {
   }
   await page.getByRole('button', { name: /设置/ }).click();
   await page.getByText('这台电脑', { exact: true }).waitFor();
+  check(await page.getByText('绿色软件说明').count() === 1 && await page.getByRole('button', { name: /清除数据并退出/ }).count() === 1, '设置页有绿色软件说明和清除数据');
+  check(await page.getByText('安装到本机').count() === 0, '不再提示安装到本机');
   await shot(page, 'settings');
 
   // 暗色模式 + 窄窗口

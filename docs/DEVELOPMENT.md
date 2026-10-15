@@ -57,11 +57,8 @@ build.sh            Mono 编译（开发调试用）
 | `--port N` | 指定端口（默认随机） |
 | `--token T` | 指定访问令牌（默认随机，测试用） |
 | `--ui-dir 路径` | 从磁盘读取界面文件而不是嵌入资源（改界面时免重新编译） |
-| `--data-dir 路径` | 指定数据目录（默认 `%LOCALAPPDATA%\AIStation`） |
+| `--data-dir 路径` | 指定数据目录（默认 exe 旁边的 `AIStation-data`） |
 | `--selftest 文件` | 在本机检测各项能力，把结果写成 JSON 后退出 |
-| `--install-self` | 安装到本机（复制程序、快捷方式、登记到系统应用列表）后退出 |
-| `--uninstall-self [--quiet]` | 从本机卸载 AI Station 本身 |
-| `--wait-pid N` | 等进程 N 退出后再启动（安装到本机后接管用） |
 
 测试用环境变量：`AISTATION_WINGET`（替换 winget）、`AISTATION_OLLAMA`（指定 ollama.exe）、`AISTATION_LMS`（指定 lms.exe）、`AISTATION_NETWORK`（固定网络探测结果：cn / global / offline）。
 
@@ -112,7 +109,7 @@ build.sh            Mono 编译（开发调试用）
 
 **使用须知**：首次打开界面时弹出（`profile.disclaimerAccepted` 记录是否已同意），文字在 `ui/app.js` 的 `DISCLAIMER` 常量中，设置页显示全文。
 
-**安装到本机**（`SelfInstall.cs`）：复制到 `%LOCALAPPDATA%\Programs\AIStation\AIStation.exe`，用 `WScript.Shell` 创建桌面和开始菜单快捷方式，在 `HKCU\...\Uninstall\AIStation` 登记（`UninstallString` 为 `--uninstall-self`）。从界面安装后，新位置的程序以 `--wait-pid` 启动、等旧进程退出后接管。命令行 `--install-self` / `--uninstall-self [--quiet]` 供 CI 和系统“应用”列表使用。离线包（程序旁有 apps/ 或 models/）不提示安装到本机，因为离线资源在 U 盘上。
+**绿色版**（`Portable.cs`）：不安装、不登记系统应用列表。数据目录默认是 exe 旁边的 `AIStation-data`（写入测试失败时才退回 `%LOCALAPPDATA%\AIStation`，并从那里迁移旧版的 `profile.json`）。正在运行实例的端口和令牌写在 `%TEMP%\AIStation-instance.json`，这样不同位置的副本也能找到彼此。启动时如果开机自启登记的路径和当前 exe 不同，会自动改成当前路径。设置页可创建指向当前 exe 的桌面快捷方式；“清除数据并退出”会关闭开机自启、删除指向本 exe 的桌面快捷方式、结束自己打开的 Edge 窗口（按 WebView 配置目录匹配），退出后由 cmd 循环删除数据目录直到成功。
 
 **安装前检查与失败自助**：`ui/app.js` 的 `preCheck()` 在安装前汇总阻止项（Windows 版本过旧、没联网、CPU 不支持 AVX2）和提醒（无 winget、海外服务不可达、内存小、磁盘少、需海外账号 / API Key）。后端在下载前检查系统盘空间（至少 1GB 且不少于安装包 3 倍）。任务失败时带 `hint`（disk / network / uac / blocked / hash / unsupported / reboot / nowinget / running / lms-missing / unknown），界面按 `HINTS` 显示对应说明和操作按钮。
 

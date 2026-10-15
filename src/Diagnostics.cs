@@ -24,8 +24,8 @@ namespace AIStation
                 var report = core.State();
                 report.Remove("catalog"); // 目录是内置的，不需要
                 report["generatedAt"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
-                report["exePath"] = SelfInstall.CurrentExe;
-                report["runningFromInstallDir"] = SelfInstall.RunningFromInstallDir;
+                report["exePath"] = Portable.ExePath;
+                report["dataDir"] = Paths.DataDir;
                 report["registryEntries"] = Detector.ScanRegistry().Count;
 
                 using (var fs = File.Create(path))

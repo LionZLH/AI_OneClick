@@ -57,11 +57,11 @@ jobs:
           npm install --no-save --no-package-lock playwright@1.56.1
           node tests/e2e.mjs --exe dist/AIStation.exe --real --out test-results
 
-      - name: 安装到本机 → 卸载 AI Station 本身
+      - name: 绿色版（数据在程序旁边、快捷方式、自启修正、清除数据）
         if: always()
-        timeout-minutes: 5
+        timeout-minutes: 6
         shell: pwsh
-        run: tests/self-install.ps1
+        run: tests/portable.ps1
 
       - name: 一键准备本地 AI（真实安装 Ollama 并下载小模型）
         if: always()

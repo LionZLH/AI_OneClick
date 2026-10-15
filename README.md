@@ -10,7 +10,7 @@ Windows 上的 **AI 软件启动器与管理工具**：帮你挑选合适的 AI 
 - **本地模型**：按内存、显存推荐 Qwen3 模型规格。“一键准备”会自动安装 Ollama 并下载推荐模型，完成后点“开始对话”；也可让 LM Studio 下载，或从离线包导入 GGUF 文件。
 - **安装前检查**：安装前提醒网络、CPU、内存、磁盘空间、账号要求等问题；安装失败时按原因给出解决办法（清理磁盘、重试、改从官网下载等）。
 - **费用与账号**：每款软件标注是否免费、需要什么账号登录。
-- **安装到本机**：首次运行可一键安装到 `%LOCALAPPDATA%\Programs\AIStation`，创建桌面和开始菜单快捷方式，并登记到系统“应用”列表（可从那里卸载 AI Station），不需要管理员权限。
+- **绿色软件**：不需要安装，双击 exe 即用。设置、日志和界面缓存都放在 exe 旁边的 `AIStation-data` 文件夹，不写系统目录；可在设置里一键创建桌面快捷方式，程序移动后开机自启会自动跟到新位置；“清除数据并退出”后删除 exe 即完全移除。
 - **问题报告**：设置页和失败任务中可一键导出问题报告（zip，保存到桌面），包含电脑信息、识别结果、任务记录和日志，不含账号密码。
 
 ## 使用
@@ -18,13 +18,15 @@ Windows 上的 **AI 软件启动器与管理工具**：帮你挑选合适的 AI 
 1. 下载 `AIStation.exe`（GitHub Actions 每次构建的 `AIStation-exe` 产物，或自己编译，见下文）。
 2. 双击运行。程序会在托盘常驻，并用系统自带的 Edge 打开一个应用窗口。
 3. 首次打开会显示使用须知，然后进入配置向导：推荐「帮我推荐」，也可以「我自己挑」。
-4. 在「我的 AI」顶部点「安装到本机」，以后从桌面图标打开。
+4. 不需要安装。想方便下次打开，可以在「设置」里点「在桌面创建」快捷方式。
 
 > exe 目前没有代码签名，首次运行时 Windows 可能提示“Windows 已保护你的电脑”，点「更多信息 → 仍要运行」即可。
 
 **运行要求**：Windows 10 / 11，系统自带的 .NET Framework 4.x 即可（Windows 10 1903 之后都已内置），不需要安装任何运行库。自动安装依赖系统自带的 winget（“应用安装程序”）；没有 winget 时，程序会提示从 Microsoft Store 获取，或改从官网下载。
 
-**数据位置**：`%LOCALAPPDATA%\AIStation\`（配置 `profile.json`、日志 `logs\aistation.log`）。
+**数据位置**：exe 旁边的 `AIStation-data\`（配置 `profile.json`、日志 `logs\aistation.log`、界面缓存 `WebView\`）。移动程序时把 exe 和这个文件夹一起移动。只有 exe 所在位置不能写入时，才改存到 `%LOCALAPPDATA%\AIStation\`。
+
+**完全移除**：在「设置」里点「清除数据并退出」（会删除数据文件夹、关闭开机自启、删除桌面快捷方式），再删除 `AIStation.exe`。通过它安装的 AI 软件不受影响。
 
 ## 离线 / 内网电脑
 
@@ -59,7 +61,7 @@ npm test                 # 推荐引擎与软件目录单元测试（Node 18+）
 node tests/e2e.mjs       # 端到端界面测试（Linux 下用模拟 winget）
 ```
 
-每次推送都会在 GitHub Actions 的 Windows 机器上：用系统自带 csc 编译 → 自检 → 核对全部 winget 包 ID → 真实安装/启动/卸载一个软件 → 跑界面端到端测试并截图。
+每次推送都会在 GitHub Actions 的 Windows 机器上：用系统自带 csc 编译 → 自检 → 核对全部 winget 包 ID → 真实安装/启动/卸载一个软件 → 跑界面端到端测试 → 绿色版行为（数据位置、快捷方式、自启修正、清除数据） → 真实安装 Ollama / LM Studio 并下载小模型 → 正常启动看窗口能否打开。
 
 详细的架构、接口与维护说明见 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)，收录软件与来源见 [docs/catalog-sources.md](docs/catalog-sources.md)。
 

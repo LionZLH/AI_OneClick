@@ -570,18 +570,6 @@
       <button class="btn sm" data-act="nav" data-id="tasks">查看进度</button></div>`;
   }
 
-  function selfInstallBanner() {
-    const sys = S.system || {};
-    const off = S.offline || {};
-    if (!sys.windows || sys.runningInstalled || S.profile.installPromptDismissed || off.appsDir || off.modelsDir) return '';
-    const text = sys.selfInstalled
-      ? '这台电脑已经安装了 AI Station，你现在打开的是另一个副本（比如下载文件夹里的）。可以用它覆盖安装，以后从桌面图标打开。'
-      : 'AI Station 还没有安装到这台电脑。安装后可以从桌面和开始菜单打开，不用再去下载文件夹里找，也不需要管理员权限。';
-    return `<div class="banner">${icon('download')}<span class="grow">${text}</span>
-      <button class="btn sm primary" data-act="self-install">${sys.selfInstalled ? '覆盖安装' : '安装到本机'}</button>
-      <button class="btn sm ghost" data-act="dismiss-install">以后再说</button></div>`;
-  }
-
   function viewHome() {
     const launches = S.profile.launches || {};
     const mine = apps.filter((a) => owned(a.id))
@@ -612,7 +600,7 @@
         <p>${mine.length ? '你的 ' + mine.length + ' 个 AI 工具都在这里，点击即可启动。' : '在这里统一启动和管理你的 AI 软件。'}</p></div>
         <div class="actions"><button class="btn" data-act="refresh">${icon('refresh', S.scanning ? 'spin' : '')}刷新</button>
         <button class="btn primary" data-act="nav" data-id="library">${icon('grid')}添加软件</button></div></div>
-      ${jobsBanner()}${wingetBanner()}${selfInstallBanner()}
+      ${jobsBanner()}${wingetBanner()}
       ${body}
       ${pending.length ? `<h2 class="section">${icon('sparkles')}为你推荐，还没装 <span class="muted">来自问卷结果</span></h2>
         <div class="chips">${pending.map((id) => `<button class="chip" data-act="install-one" data-id="${id}">${avatar(byId[id], 'sm')}${esc(byId[id].name)}<span class="muted">${byId[id].kind === 'web' ? '添加' : '安装'}</span></button>`).join('')}</div>` : ''}
@@ -931,12 +919,23 @@
       <div class="panel" style="margin-top:14px"><h3>常规</h3>
         <div class="list-row"><div class="grow"><div class="name">开机时自动启动</div><div class="muted">开机后在托盘待命，右键托盘图标即可快速启动 AI 软件</div></div>
           <button class="toggle ${S.system.autostart ? 'on' : ''}" data-act="autostart" aria-pressed="${S.system.autostart}" title="开机时自动启动"></button></div>
+        ${S.system.removable ? '<p class="fine-note" style="margin:4px 0 8px">' + icon('alert') + 'AI Station 在 U 盘等可移动磁盘上运行，拔掉后开机自启会失效。</p>' : ''}
         <div class="list-row"><div class="grow"><div class="name">重新获取推荐</div><div class="muted">用途或网络环境变了，可以重新做一次问卷</div></div>
           <button class="btn sm" data-act="start-quiz">重新做问卷</button></div>
-        <div class="list-row"><div class="grow"><div class="name">安装到本机</div><div class="muted">${S.system.runningInstalled ? '已安装：' + esc(S.system.installDir) + '，可从桌面和开始菜单打开' : S.system.selfInstalled ? '已安装过，当前运行的是另一个副本，可以用它覆盖安装' : '复制到 ' + esc(S.system.installDir) + '，创建桌面和开始菜单快捷方式'}</div></div>
-          ${S.system.runningInstalled ? '<span class="tag ok">' + icon('check') + '已安装</span>' : `<button class="btn sm" data-act="self-install" ${S.system.windows ? '' : 'disabled'}>${S.system.selfInstalled ? '覆盖安装' : '安装到本机'}</button>`}</div>
-        <div class="list-row"><div class="grow"><div class="name">数据与日志</div><div class="muted">${esc(S.system.dataDir)}</div></div>
+        <div class="list-row"><div class="grow"><div class="name">桌面快捷方式</div><div class="muted">AI Station 是绿色软件，不需要安装。建一个桌面快捷方式，下次更容易找到它</div></div>
+          ${S.system.desktopShortcut ? '<span class="tag ok">' + icon('check') + '已创建</span>' : `<button class="btn sm" data-act="desktop-shortcut" ${S.system.windows ? '' : 'disabled'}>在桌面创建</button>`}</div>
+        <div class="list-row"><div class="grow"><div class="name">数据与日志</div><div class="muted">${esc(S.system.dataDir)}${S.system.dataNextToExe ? '' : '（程序所在位置不能写入，改存到了系统目录）'}</div></div>
           <button class="btn sm" data-act="open-data-dir">${icon('folder')}打开文件夹</button></div>
+      </div>
+      <div class="panel" style="margin-top:14px"><h3>绿色软件说明</h3>
+        <p class="lead">AI Station 不需要安装，也不在系统里留下安装信息。程序是 <code class="cmd">${esc((S.system.exe || '').split(/[\\/]/).pop() || 'AIStation.exe')}</code>，设置和日志都在旁边的 <code class="cmd">AIStation-data</code> 文件夹里。</p>
+        <ul class="plain">
+          <li>移动程序时，把 <b>AIStation.exe 和 AIStation-data 文件夹一起</b>移动，设置就不会丢。</li>
+          <li>开启了开机自启的话，移动程序后再打开一次 AI Station，自启会自动改到新位置。</li>
+          <li>不想用了：点下面的「清除数据并退出」，再删除 AIStation.exe 即可。通过它安装的 AI 软件不受影响。</li>
+        </ul>
+        <div class="list-row"><div class="grow"><div class="name">程序位置</div><div class="muted">${esc(S.system.exe || '')}</div></div></div>
+        <div class="row" style="margin-top:6px"><button class="btn danger" data-act="clear-data" ${S.system.windows ? '' : 'disabled'}>${icon('trash')}清除数据并退出</button></div>
       </div>
       <div class="panel" style="margin-top:14px"><h3>遇到问题？</h3>
         <p class="lead">导出一份问题报告（电脑信息、软件识别结果、安装记录和运行日志，不含账号密码），保存到桌面，发给技术支持即可。</p>
@@ -1188,24 +1187,34 @@
         toast('已保存到桌面：' + r.path.split(/[\\/]/).pop());
       } catch (e) { fail(e); }
     },
-    'self-install': async () => {
+    'desktop-shortcut': async () => {
       try {
-        const r = await api('self-install', {});
-        if (r.warning) toast(r.warning, 'error');
-        if (r.relaunch) {
-          ui.relaunching = true;
-          root.innerHTML = '<div class="boot">' + icon('check') + '已安装到本机，正在从新位置重新打开 AI Station…<br>这个窗口可以关闭了。</div>';
-          setTimeout(() => window.close(), 2500);
-          return;
-        }
-        if (r.ok) toast('已安装到本机，桌面和开始菜单都有「AI Station」');
-        await refreshState();
+        await api('desktop-shortcut', {});
+        S.system.desktopShortcut = true;
+        toast('已在桌面创建「AI Station」快捷方式');
         render();
       } catch (e) { fail(e); }
     },
-    'dismiss-install': async () => {
-      try { S.profile = await api('profile', { installPromptDismissed: true }); } catch (e) { fail(e); }
+    'clear-data': () => {
+      ui.modal = {
+        title: '清除 AI Station 的数据？',
+        body: '<p>会删除 AI Station 自己的设置、日志和界面缓存，关闭开机自启，删除桌面快捷方式，然后退出程序。</p>' +
+          '<p class="muted">通过它安装的 AI 软件不受影响。清除后，再删除 AIStation.exe，就把 AI Station 从这台电脑上完全移除了。</p>',
+        actions: [
+          { label: '取消', act: 'modal-close', cls: 'ghost' },
+          { label: '清除并退出', act: 'confirm-clear-data', cls: 'danger-solid' }
+        ]
+      };
       render();
+    },
+    'confirm-clear-data': async () => {
+      ui.modal = null;
+      try {
+        await api('clear-data', {});
+        ui.relaunching = true;
+        root.innerHTML = '<div class="boot">' + icon('check') + '数据已清除，AI Station 已退出。<br>现在可以关闭这个窗口，并删除 AIStation.exe。</div>';
+        setTimeout(() => window.close(), 3000);
+      } catch (e) { fail(e); }
     },
     'prepare-local': (el) => startJobs([
       { action: 'install', appId: 'ollama' },
@@ -1264,6 +1273,7 @@
       render();
     },
     autostart: async () => {
+      if (!S.system.autostart && S.system.removable) toast('AI Station 在 U 盘上，拔掉 U 盘后开机自启会失效', 'error');
       try { await api('autostart', { enabled: !S.system.autostart }); S.system.autostart = !S.system.autostart; render(); }
       catch (e) { fail(e); }
     },
