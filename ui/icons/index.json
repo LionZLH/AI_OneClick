@@ -1,0 +1,82 @@
+{
+ "antigravity": {
+  "full": false,
+  "source": "https://antigravity.google/favicon.svg"
+ },
+ "anythingllm": {
+  "full": false,
+  "source": "https://anythingllm.com/icon.png?0a59f488e9ddf54c"
+ },
+ "chatglm": {
+  "full": false,
+  "source": "https://chatglm.cn/favicon.ico"
+ },
+ "cherry": {
+  "full": false,
+  "source": "https://www.cherryai.com.cn/assets/favicon-BmbgeFTf.png"
+ },
+ "claude": {
+  "full": false,
+  "source": "https://claude.com/favicon.svg"
+ },
+ "copilot": {
+  "full": false,
+  "source": "https://copilot.microsoft.com/static/cmc/favicon.svg"
+ },
+ "cursor": {
+  "full": false,
+  "source": "https://cursor.com/marketing-static/favicon-light.svg"
+ },
+ "deepseek": {
+  "full": false,
+  "source": "https://www.deepseek.com/favicon.ico"
+ },
+ "doubao": {
+  "full": false,
+  "source": "https://lf-flow-web-cdn.doubao.com/obj/flow-doubao/favicon/new-doubao/192x192.png"
+ },
+ "gemini": {
+  "full": false,
+  "source": "https://gemini.google/apple-touch-icon.png"
+ },
+ "gpt4all": {
+  "full": true,
+  "source": "https://www.nomic.ai/favicon.svg"
+ },
+ "jan": {
+  "full": false,
+  "source": "https://www.jan.ai/favicon.ico"
+ },
+ "jianying": {
+  "full": false,
+  "source": "https://lf3-s.vlabstatic.com/obj/vilab-static/ies/ulike/web/resource/fe_official/assets/imgs/lv/favicon.ico"
+ },
+ "jimeng": {
+  "full": false,
+  "source": "https://lf3-lv-buz.vlabstatic.com/obj/image-lvweb-buz/common/images/dreamina-v1.ico"
+ },
+ "kimi": {
+  "full": true,
+  "source": "https://www.kimi.com/pwa-192.png"
+ },
+ "lmstudio": {
+  "full": false,
+  "source": "https://lmstudio.ai/assets/marketing/logo-192x192.png"
+ },
+ "metaso": {
+  "full": false,
+  "source": "https://metaso.cn/apple-touch-icon.png"
+ },
+ "ollama": {
+  "full": false,
+  "source": "https://ollama.com/public/apple-touch-icon.png"
+ },
+ "wps": {
+  "full": false,
+  "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAQ2SURBVHgB7Va9biRFEK7qWa9XAuSByMEhr0FIzvARkEBgEUHEPQG79wKcTyL3Li/gnxdgl5TgTAQSQmeJxEJCIoIjOc/JyemSW4tbe70z28XX1T0z+zO2U6RzWe3unq6un6+/rl6iW7mV111Y7tzZImMekVAcvkm+NqUnxZy1S0jsQz49PdTF3Q82ych3WNzM1dM/Msp+S4UviQ32RHDlBm5MIgJrz9Bvs6y9e4Ida3MOvRXGnxRTyb2HgM6I/13nZDCQb98/IcNNtQC19J8JXf46InWM5npjfM/qnJ1dtVGjSOLgKkQWnMz4y+clcmgx2TiWb955QENpFsBhT/r7SDhymZMwEnfKOjbiFcSSRuO+k7F7FFk4xsdIECZ6xtxg7HqeuHFYQ583lh59Dgvn0qZXmL/CviGy/3tM9gJOoYPmehcMcaR7vE03Vj9yyNJsxlQf4xgkLrNFUCnvEzUwGZUoRDjjiB7peCzr9Gm9hflOgRokfZHdnfw1HPi9+X/IMu8CpHsznIIN3SgbqzvoOiXAMgBgd/nJ84TmibGx+pgcCTeoS9HSY5hpFnwh6vEPp/cr9jidE3/M+Vfb4ycv7hsf5mifzOQlYPFwM87X2B2qlq62kWnRhW3SOaC8sExDHFUadSt3OFsecg+9csGorgbAfw4GVOMDPef8fCJpy0bcnLcFVI5oFYORbcMpaQBD6/o+HybJYvawAVs4Kgq2Hd96ObqmjHK8h8gGgYw+yuWoGoXzrEXnE2SfCQ0zN3dUqc7e2VAyB0LjdtBSWugWASgK7G7EFNONtGRzFgWdp7JNKYxlCBYd+h4fP0+wFi/oGmp7ZK1WI/jowleyEIAXCy7Yl8UxGGyIzCwKjvXGxj5AZxAR2ElXPorbVDPbs7qmExKRcLUTR75plZkAFIVIDvQY3CYlpW3nKBQZ6VqoGUb6oOwgBPa1bHkUVJcnXwUd9hwAUlPZVyAAGZPnQl6UXBDLsqtrDdvReV6UHFKRuxH2AeZwCGTc2MkymO9JnSfyDN768+4WAggo7IWKxeH8vpRP3mo5TpQVUYPrBSttrabujI1sy8dvfIixZ76x3gajRhzPZq/+qEIUxjR9igr3NlVKqChZtk6NxgC9e9A8AUWL0hn+r+QvDPQTytLP+HiU3IiAmj8KXCh5IEWR8mN9C5xB1a3RfnFz/NGtTL0d7v39vsr5lQH4lTq4YM+U6aVxCuQD3JOpe19zuoNQwALp8qtsE6plvSvdXLWgmRnZL1isJXoSXjLu81GZUaGrL14otVrQ0Eg607oLfugakS2c61L9qf5a8i+e6O+CzLw3b1R1a3XHhZWp1zHhXy7Xr/NhrlvkI73fB2Vh0vvcr8pIdR0Xpisp49reILWbFPjncUe+qK0g83vK5tGbD12xqJQR3pPG0hrq8xZQ+JF/yvp0K7fyf5f/AKzIO6StcaNfAAAAAElFTkSuQmCC"
+ },
+ "yuanbao": {
+  "full": false,
+  "source": "https://yuanbao.tencent.com/favicon.ico"
+ }
+}
