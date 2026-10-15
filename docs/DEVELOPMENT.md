@@ -87,7 +87,13 @@ build.sh            Mono 编译（开发调试用）
 
 **winget 调用**（`JobRunner.cs`）：
 `winget install --id <ID> --exact --source winget|msstore --silent --accept-source-agreements --accept-package-agreements [--disable-interactivity]`。
-标准输出逐字符读取，`\r` 刷新的进度行解析为百分比（`12.0 MB / 100 MB` 或 `45%`），安装阶段无法获知百分比时界面显示“进行中”动画而不是虚构数字。常见返回码（已安装、已是最新、下载失败、哈希不匹配、软件正在运行等）翻译成中文提示，未知错误显示十六进制返回码和原始输出。
+标准输出逐字符读取，`\r` 刷新的进度行解析为百分比（`12.0 MB / 100 MB` 或 `45%`）。实测 winget 的输出被重定向时通常不打印进度条，此时界面显示“进行中”动画和阶段文字（下载中 / 安装中），不虚构数字。常见返回码（已安装、已是最新、下载失败、哈希不匹配、软件正在运行等）翻译成中文提示，未知错误显示十六进制返回码和原始输出。
+
+**卸载**：winget 卸载时只运行注册表中的普通 `UninstallString`，NSIS / Inno 打包的软件会弹出完整的卸载向导（CI 中 Jan 曾卡在“Click Uninstall to start”）。因此卸载顺序是：
+1. 先检查安装目录下是否有进程在运行，有则提示用户先退出（否则卸载程序会卡在“请先关闭”弹窗上）；
+2. 注册表有 `QuietUninstallString` 就用它；否则按 `installerType` 追加 `/S`（NSIS）、`/VERYSILENT`（Inno）或改为 `msiexec /x … /qn`；
+3. 商店应用和类型不明的软件交给 `winget uninstall`；
+4. NSIS 卸载程序会复制到临时目录后在后台继续执行，所以命令返回后会反复重新识别，直到软件真正消失才标记“已卸载”。
 
 **硬件检测**（`Hardware.cs`）：内存用 `GlobalMemoryStatusEx`；AVX2 用 `IsProcessorFeaturePresent(40)`，该常量从 Windows 10 2004（build 19041）起才可靠，更老的系统返回“无法确认”；显存读显卡驱动注册表 `HardwareInformation.qwMemorySize`（WMI 的 AdapterRAM 最多只到 4GB）；Windows 11 的 ProductName 仍写着 Windows 10，按 build ≥ 22000 修正。
 
