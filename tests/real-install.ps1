@@ -44,7 +44,16 @@ try {
     if (-not $info.exe) { throw '没有解析出主程序路径（启动台无法显示真实图标）' }
     $icon = Invoke-WebRequest -Uri "$base/icon?id=$AppId&t=$token" -UseBasicParsing
     Write-Host "图标：$($icon.Headers['Content-Type']) $($icon.RawContentLength) 字节"
-    if ($info.exe) { Get-Process | Where-Object { $_.Path -eq $info.exe } | Stop-Process -Force -ErrorAction SilentlyContinue }
+    $dir = Split-Path $info.exe
+
+    Write-Host "== 运行中卸载应被拒绝"
+    $null = Post 'jobs' @{ jobs = @(@{ action = 'uninstall'; appId = $AppId }) }
+    $r = WaitJobs
+    $job = $r.jobs[-1]
+    Write-Host "结果：$($job.status) $($job.message)"
+    if ($job.status -ne 'failed' -or $job.message -notmatch '正在运行') { throw '软件运行时没有提示先关闭' }
+
+    Get-Process | Where-Object { $_.Path -and $_.Path.StartsWith($dir, [StringComparison]::OrdinalIgnoreCase) } | Stop-Process -Force -ErrorAction SilentlyContinue
     Start-Sleep 3
 
     Write-Host "== 卸载 $AppId"

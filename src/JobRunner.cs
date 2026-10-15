@@ -244,6 +244,7 @@ namespace AIStation
         {
             var app = _core.FindApp(job.AppId);
             if (app == null || !app.UsesWinget) { Finish(job, "failed", "该软件不支持通过 winget " + VerbName(verb)); return; }
+            if (verb != "install" && IsRunning(job, app)) return;
             if (!_core.WingetChecked) _core.CheckWinget();
             if (_core.WingetVersion == null) { Finish(job, "failed", "这台电脑没有可用的 winget"); return; }
 
@@ -411,6 +412,7 @@ namespace AIStation
             }
             InstallInfo info;
             lock (_core.Sync) _core.Installed.TryGetValue(app.Id, out info);
+            if (IsRunning(job, app)) return;
             var reg = info == null ? null : info.Reg;
             var cmd = reg == null ? null : (reg.QuietUninstallString ?? reg.UninstallString);
             if (string.IsNullOrEmpty(cmd)) { Finish(job, "manual", "请在系统“设置 → 应用”中卸载"); return; }
@@ -453,7 +455,35 @@ namespace AIStation
                 }
                 Thread.Sleep(3000);
             }
-            Finish(job, "success", "卸载程序仍在运行，完成后点击“刷新”");
+            Finish(job, "manual", "卸载程序仍在运行，可能在等待你确认；完成后点击「刷新」");
+        }
+
+        /// <summary>软件正在运行时卸载/更新会被安装程序的弹窗卡住，提前检查并提示用户关闭。</summary>
+        private bool IsRunning(Job job, AppDef app)
+        {
+            InstallInfo info;
+            lock (_core.Sync) _core.Installed.TryGetValue(app.Id, out info);
+            if (info == null) return false;
+            string dir = null;
+            if (!string.IsNullOrEmpty(info.ExePath)) dir = Path.GetDirectoryName(info.ExePath);
+            else if (info.Reg != null && !string.IsNullOrEmpty(info.Reg.InstallLocation)) dir = Detector.CleanPath(info.Reg.InstallLocation);
+            if (string.IsNullOrEmpty(dir) || dir.Length < 8) return false;
+            dir = dir.TrimEnd('\\') + "\\";
+            var names = new List<string>();
+            foreach (var p in Process.GetProcesses())
+            {
+                try
+                {
+                    var file = p.MainModule.FileName;
+                    if (file.StartsWith(dir, StringComparison.OrdinalIgnoreCase) && !names.Contains(p.ProcessName)) names.Add(p.ProcessName);
+                }
+                catch (Exception) { } // 无权限访问的系统进程
+                finally { p.Dispose(); }
+            }
+            if (names.Count == 0) return false;
+            AddLine(job, "正在运行的进程：" + string.Join(", ", names.ToArray()));
+            Finish(job, "failed", app.Name + " 正在运行，请先完全退出它（包括托盘图标）再重试");
+            return true;
         }
 
         // ---------- 模型 ----------
