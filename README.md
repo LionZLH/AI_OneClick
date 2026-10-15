@@ -21,7 +21,14 @@
   - `AI装机-完整版（32GB+内存）`：附带 Qwen2.5-14B (9.0GB)
 - **自包含安装器**：
   - Windows：运行 `scripts/offline-install.ps1`，自动检测硬件并从 `./apps/` 静默安装 LM Studio、AnythingLLM、Jan、GPT4All，并将 `./models/` 中合适的 GGUF 模型注入对应软件的本地模型目录。
-  - macOS：运行 `scripts/offline-install.sh`，支持 DMG/PKG 挂载安装与模型注入。
+### 3. 原生桌面启动台（极简免装单文件）
+- **程序文件**：`AIStation.exe`（编译体积仅 29 KB，零依赖，直接调用系统 .NET 4.8 运行时）。
+- **双模支持**：
+  - 在线模式：扫描已安装 19 款客户端，未安装应用支持通过 `winget` 一键后台静默下载安装。
+  - 离线模式：检测到本地 `apps/` 与 `models/` 时，一键触发全自动断网灌装部署。
+  - 内置硬件体检：一键弹窗查看当前 CPU、内存、AVX2 指令集并推导推荐配置。
+
+> 📖 **完整开发与工作交接白皮书**：请查阅 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)，包含详细代码拓扑、编译打包指南、排障避错手记与交接清单。
 
 ---
 
