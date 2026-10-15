@@ -21,4 +21,6 @@ if errorlevel 1 (
   echo [error] build failed
   exit /b 1
 )
-echo Built dist\AIStation.exe
+copy /y dist\AIStation.exe AIStation.exe >nul
+echo Built dist\AIStation.exe and AIStation.exe
+
