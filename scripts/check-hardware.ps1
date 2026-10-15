@@ -273,7 +273,7 @@ foreach ($tier in ($MODEL_TIERS | Sort-Object MinRamGB)) {
 }
 
 Write-Host ""
-Write-Host "─" * 60 -ForegroundColor Cyan
+Write-Host ("─" * 60) -ForegroundColor Cyan
 Write-Host "  ✅  硬件检测通过！请下载上方推荐的安装包。" -ForegroundColor Cyan
-Write-Host "─" * 60 -ForegroundColor Cyan
+Write-Host ("─" * 60) -ForegroundColor Cyan
 Write-Host ""
