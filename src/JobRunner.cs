@@ -931,8 +931,34 @@ namespace AIStation
                 return;
             }
             job.Via = "LM Studio";
-            SetPhase(job, "download", "正在通过 LM Studio 下载模型 " + model + "…");
-            var code = RunProcess(job, lms, "get " + model + " --yes", null);
+            // lms 需要 LM Studio 的后台服务；没在运行时先打开 LM Studio
+            var app = _core.FindApp("lmstudio");
+            if (app != null && ProcessesOf(app).Count == 0)
+            {
+                SetMessage(job, "正在启动 LM Studio…");
+                var err = _core.Launch("lmstudio");
+                if (err != null) AddLine(job, err);
+                Thread.Sleep(8000);
+            }
+            int code = -1;
+            for (int attempt = 0; attempt < 4; attempt++)
+            {
+                SetPhase(job, "download", "正在通过 LM Studio 下载模型 " + model + "…");
+                int before;
+                lock (_jobs) before = job.Lines.Count;
+                code = RunProcess(job, lms, "get " + model + " --yes", null);
+                if (code == 0) break;
+                bool daemon = false;
+                lock (_jobs)
+                {
+                    for (int i = before; i < job.Lines.Count; i++)
+                        if (job.Lines[i].IndexOf("daemon", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                            job.Lines[i].IndexOf("connect", StringComparison.OrdinalIgnoreCase) >= 0) daemon = true;
+                }
+                if (!daemon) break;
+                SetMessage(job, "等待 LM Studio 后台服务就绪…");
+                Thread.Sleep(8000);
+            }
             job.ExitCode = code;
             if (code == 0) Finish(job, "success", "模型已下载，打开 LM Studio 即可选择它开始对话");
             else

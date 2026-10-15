@@ -69,12 +69,11 @@ jobs:
         shell: pwsh
         run: tests/real-ollama.ps1
 
-      - name: 探查 LM Studio 命令行工具
+      - name: 在 LM Studio 中一键下载模型（真实安装 LM Studio）
         if: always()
-        timeout-minutes: 12
+        timeout-minutes: 20
         shell: pwsh
-        run: tests/probe-lmstudio.ps1
-        continue-on-error: true
+        run: tests/real-lmstudio.ps1
 
       - name: 窗口冒烟测试（托盘 + Edge 应用窗口截图）
         if: always()

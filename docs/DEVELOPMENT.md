@@ -118,7 +118,7 @@ build.sh            Mono 编译（开发调试用）
 
 **问题报告**（`Diagnostics.cs`）：zip 内含 `report.json`（状态快照，不含目录）、`aistation.log`、`winget --info` 输出和说明文件，保存到桌面并在资源管理器中选中。
 
-**本地模型**：“一键准备”= 依次排队 `install ollama` 和 `pull-model`；`/api/local-models` 运行 `ollama list` 返回已有模型，界面据此显示“下载”或“开始对话”（打开 Ollama 自带的聊天窗口）。LM Studio 通过其命令行 `lms get <模型> --yes` 下载（需要先打开过一次 LM Studio），CI 中的 `tests/probe-lmstudio.ps1` 用于核实其位置和参数。
+**本地模型**：“一键准备”= 依次排队 `install ollama` 和 `pull-model`；`/api/local-models` 运行 `ollama list` 返回已有模型，界面据此显示“下载”或“开始对话”（打开 Ollama 自带的聊天窗口）。LM Studio 通过其命令行 `lms get <模型> --yes` 下载：`lms.exe` 在安装目录 `resources\app\.webpack\` 下（首次打开 LM Studio 后还会出现在 `%USERPROFILE%\.lmstudio\bin\`）；它依赖 LM Studio 的后台服务，所以下载前如果 LM Studio 没在运行会先打开它，报“daemon / connect”错误时等待后重试。CI 中 `tests/real-lmstudio.ps1` 实际验证这一流程。
 
 **费用与账号**：`catalog.json` 中每款软件有 `pricing`（free / freemium / paid）、`account`（phone / overseas / microsoft / optional / none / apikey）和 `pricingNote`，标签文字在 `pricing` / `accounts` 字典中。
 
