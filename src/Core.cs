@@ -14,7 +14,7 @@ namespace AIStation
 {
     internal sealed class AppDef
     {
-        public string Id, Name, Kind, Region, Homepage, WebUrl, Source, PackageId, DetectName, Pfn, OfflineType;
+        public string Id, Name, Kind, Region, Homepage, WebUrl, Source, PackageId, DetectName, Pfn, InstallerType;
         public List<string> ExeNames = new List<string>();
         public List<string> ExePaths = new List<string>();
         public List<string> OfflineMatch = new List<string>();
@@ -43,7 +43,7 @@ namespace AIStation
             a.ExePaths = Json.StrList(detect, "paths");
             var offline = Json.Obj(d, "offline");
             a.OfflineMatch = Json.StrList(offline, "match");
-            a.OfflineType = Json.Str(offline, "installerType");
+            a.InstallerType = Json.Str(offline, "installerType");
             return a;
         }
     }

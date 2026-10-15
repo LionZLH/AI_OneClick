@@ -61,6 +61,7 @@ async function waitServer() {
   for (let i = 0; i < 60; i++) {
     try {
       const r = await fetch(base + '/api/state', { headers: { 'X-AIStation-Token': token } });
+      await r.text(); // 必须读完响应体，否则 Node 的 fetch 在连接关闭时会触发内部断言
       if (r.ok) return;
     } catch { /* 还没启动 */ }
     await new Promise((r) => setTimeout(r, 250));
@@ -72,8 +73,11 @@ async function main() {
   await waitServer();
 
   // 接口安全：没有令牌或 Host 不对时拒绝
-  check((await fetch(base + '/api/state')).status === 403, '无令牌访问接口返回 403');
+  const noToken = await fetch(base + '/api/state');
+  await noToken.text();
+  check(noToken.status === 403, '无令牌访问接口返回 403');
   const bad = await fetch(base + '/api/launch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: 'kimi' }) });
+  await bad.text();
   check(bad.status === 403, '跨站 POST（无令牌头）被拒绝');
 
   const browser = await chromium.launch(isWin ? { channel: 'msedge' } : {});

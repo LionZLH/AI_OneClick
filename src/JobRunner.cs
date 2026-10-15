@@ -369,8 +369,8 @@ namespace AIStation
                 exe = "msiexec.exe";
                 args = "/i \"" + file.Path + "\" /qn /norestart";
             }
-            else if (app.OfflineType == "nullsoft") args = "/S";
-            else if (app.OfflineType == "inno") args = "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-";
+            else if (app.InstallerType == "nullsoft") args = "/S";
+            else if (app.InstallerType == "inno") args = "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-";
             else { args = ""; silent = false; }
 
             SetMessage(job, silent ? "正在从离线包安装…" : "已打开安装程序，请按提示完成安装");
@@ -404,20 +404,49 @@ namespace AIStation
         {
             var app = _core.FindApp(job.AppId);
             if (app == null) { Finish(job, "failed", "未知的软件"); return; }
-            if (app.UsesWinget && _core.WingetVersion != null)
-            {
-                RunWingetAction(job, "uninstall");
-                if (job.Status == "success") WaitUntilRemoved(job, app);
-                return;
-            }
             InstallInfo info;
             lock (_core.Sync) _core.Installed.TryGetValue(app.Id, out info);
-            if (IsRunning(job, app)) return;
             var reg = info == null ? null : info.Reg;
-            var cmd = reg == null ? null : (reg.QuietUninstallString ?? reg.UninstallString);
-            if (string.IsNullOrEmpty(cmd)) { Finish(job, "manual", "请在系统“设置 → 应用”中卸载"); return; }
+
+            // winget 卸载时只会运行注册表里的普通卸载命令，NSIS/Inno 软件会弹出完整的卸载向导。
+            // 能确定静默参数时由我们直接运行静默卸载；商店应用和类型不明的软件交给 winget。
+            var silentCmd = SilentUninstallCommand(app, reg);
+            if (silentCmd == null)
+            {
+                if (app.UsesWinget && _core.WingetVersion != null)
+                {
+                    RunWingetAction(job, "uninstall");
+                    if (job.Status == "success") WaitUntilRemoved(job, app);
+                    return;
+                }
+                var cmdText = reg == null ? null : reg.UninstallString;
+                if (string.IsNullOrEmpty(cmdText)) { Finish(job, "manual", "请在系统“设置 → 应用”中卸载"); return; }
+                if (IsRunning(job, app)) return;
+                RunUninstallCommand(job, app, cmdText, "已打开卸载程序，请按提示完成卸载");
+                return;
+            }
+            if (IsRunning(job, app)) return;
+            RunUninstallCommand(job, app, silentCmd, "正在静默卸载…");
+        }
+
+        private static string SilentUninstallCommand(AppDef app, RegEntry reg)
+        {
+            if (reg == null) return null;
+            if (!string.IsNullOrEmpty(reg.QuietUninstallString)) return reg.QuietUninstallString;
+            var u = reg.UninstallString;
+            if (string.IsNullOrEmpty(u)) return null;
+            if (u.StartsWith("MsiExec.exe", StringComparison.OrdinalIgnoreCase))
+                return Regex.Replace(u, @"/I\{", "/X{", RegexOptions.IgnoreCase) + " /qn /norestart";
+            if (app.InstallerType == "nullsoft") return u + " /S";
+            if (app.InstallerType == "inno") return u + " /VERYSILENT /SUPPRESSMSGBOXES /NORESTART";
+            return null;
+        }
+
+        private void RunUninstallCommand(Job job, AppDef app, string cmd, string message)
+        {
             job.Via = "卸载程序";
-            SetMessage(job, "正在运行卸载程序…");
+            SetMessage(job, message);
+            AddLine(job, "> " + cmd);
             try
             {
                 var psi = new ProcessStartInfo("cmd.exe", "/s /c \"" + cmd + "\"") { UseShellExecute = false, CreateNoWindow = true };
@@ -426,10 +455,12 @@ namespace AIStation
                     p.WaitForExit();
                     job.ExitCode = p.ExitCode;
                 }
-                Finish(job, job.ExitCode == 0 ? "success" : "failed", job.ExitCode == 0 ? "已卸载" : "卸载程序返回错误码 " + job.ExitCode);
-                if (job.Status == "success") WaitUntilRemoved(job, app);
             }
-            catch (Exception ex) { Finish(job, "failed", "无法运行卸载程序：" + ex.Message); }
+            catch (Exception ex) { Finish(job, "failed", "无法运行卸载程序：" + ex.Message); return; }
+            if (job.ExitCode != 0) { Finish(job, "failed", "卸载程序返回错误码 " + job.ExitCode); return; }
+            SetMessage(job, "等待卸载程序完成…");
+            WaitUntilRemoved(job, app);
+            if (!job.Finished) Finish(job, "success", "已卸载");
         }
 
         /// <summary>
@@ -446,7 +477,7 @@ namespace AIStation
                 lock (_core.Sync) _core.Installed.TryGetValue(app.Id, out info);
                 if (info == null || !info.Installed)
                 {
-                    if (i > 0) Finish(job, "success", "已卸载");
+                    if (i > 0 || !job.Finished) Finish(job, "success", "已卸载");
                     return;
                 }
                 if (i == 0)
