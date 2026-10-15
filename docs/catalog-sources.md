@@ -1,39 +1,36 @@
-# 工具目录来源与边界
+# 收录软件与来源
 
-核查日期：2026-10-15。此文件记录官方入口和本轮的收录方式，不保证账号、地区、套餐、CPU 架构或某个版本在目标电脑上可用。
+核对日期：2026-10-15。winget 包 ID 对照 [microsoft/winget-pkgs](https://github.com/microsoft/winget-pkgs) 官方清单核对（版本号为当时清单中的最新版本），CI 每次构建时还会用 `winget show` 实际查询一遍。
 
-| 工具 | 官方入口 | 当前展示方式 |
-| --- | --- | --- |
-| DeepSeek | https://www.deepseek.com/download/ | DeepSeek Harness 桌面端，官网列有 Windows 与 Apple 芯片 macOS |
-| 豆包 | https://www.doubao.com/download | 桌面客户端，具体平台版本查看官网 |
-| Kimi | https://www.kimi.com | 桌面客户端，官网也可使用网页版 |
-| 腾讯元宝 | https://yuanbao.tencent.com/download | 桌面客户端，具体平台版本查看官网 |
-| 千问 | https://www.qianwen.com | 本轮只提供网页入口，不否认其可能另有客户端 |
-| 智谱清言 | https://chatglm.cn | 本轮只提供网页入口 |
-| 讯飞星火 | https://xinghuo.xfyun.cn | 本轮只提供网页入口 |
-| 海螺 AI | https://hailuoai.com | 网页视频创作入口，纠正旧文案将其写成通用配音桌面软件 |
-| TRAE 国内版 | https://www.trae.cn | 桌面编辑器；不是海外版同名软件的网络保证 |
-| ChatGPT | https://chatgpt.com/download/ | 官方桌面下载页；版本、芯片和功能以官网为准 |
-| Claude | https://claude.com/download | 官方桌面下载页 |
-| Gemini | https://gemini.google.com | 本轮只提供网页入口，不将 PWA 冒充原生安装包 |
-| Perplexity | https://www.perplexity.ai | 本轮只提供网页入口 |
-| Antigravity | https://antigravity.google/download | 官方桌面下载页 |
-| Cursor | https://cursor.com/download | 官网明确提供 Windows / macOS / Linux |
-| LM Studio | https://lmstudio.ai/download | 官方桌面下载页，模型另行准备 |
-| AnythingLLM | https://anythingllm.com/download | 官网提供 Windows / macOS / Linux，纯离线须选本地提供商并备齐组件 |
-| Jan | https://www.jan.ai/download | 官网列出 macOS / Windows / Linux |
-| GPT4All | https://www.nomic.ai/gpt4all | 官网提供 Windows / macOS / Ubuntu，模型另行准备 |
+| 软件 | 分组 | 安装方式 | 清单中的发布者 / 版本 |
+| --- | --- | --- | --- |
+| 豆包 | 国内可用 | winget `ByteDance.Doubao` | Beijing Chuntian Zhiyun Technology · 2.31.4 |
+| Kimi | 国内可用 | winget `MoonshotAI.Kimi` | 北京月之暗面科技 · 3.2.16 |
+| 腾讯元宝 | 国内可用 | winget `Tencent.Yuanbao` | 腾讯科技(深圳) · 2.88.1 |
+| 千问 | 国内可用 | winget `Alibaba.Qianwen` | Alibaba Group · 2.3.1 |
+| 智谱清言 | 国内可用 | winget `ZhipuAI.ChatGLM` | ZhipuAI · 2.0.6 |
+| TRAE 国内版 | 国内可用 | winget `ByteDance.Trae.CN` | Beijing Yinli Catapult Technology · 3.4.3 |
+| WPS Office | 国内可用 | winget `Kingsoft.WPSOffice.CN` | Kingsoft Corp. · 12.1.0.29161 |
+| 剪映专业版 | 国内可用 | winget `ByteDance.JianyingPro` | 深圳市脸萌科技 · 11.6.0.14552 |
+| Cherry Studio | 国内可用 | winget `kangfenmao.CherryStudio` | 安装包来自 github.com/CherryHQ · 2.1.6 |
+| DeepSeek | 国内可用 | 网页版 chat.deepseek.com | winget 中仅有第三方打包，不收录 |
+| 即梦 AI | 国内可用 | 网页版 jimeng.jianying.com | — |
+| 秘塔 AI 搜索 | 国内可用 | 网页版 metaso.cn | — |
+| ChatGPT | 需海外网络 | Microsoft Store `9NT1R1C2HH7J` | OpenAI |
+| Claude | 需海外网络 | winget `Anthropic.Claude` | Anthropic, PBC · 2.19675.1 |
+| Gemini | 需海外网络 | winget `Google.GeminiDesktop` | Google LLC · 1.15.0 |
+| Microsoft Copilot | 需海外网络 | Microsoft Store `9NHT9RB2F4HD` | Microsoft |
+| Cursor | 需海外网络 | winget `Anysphere.Cursor` | Anysphere · 3.19.7 |
+| Antigravity | 需海外网络 | winget `Google.Antigravity` | Google · 2.23.1 |
+| Perplexity | 需海外网络 | 网页版 perplexity.ai | winget 清单仅剩校验目录，不收录 |
+| LM Studio | 本地运行 | winget `ElementLabs.LMStudio` | LM Studio · 0.4.26+4 |
+| Ollama | 本地运行 | winget `Ollama.Ollama` | Ollama · 0.40.4 |
+| GPT4All | 本地运行 | winget `nomic.gpt4all` | Nomic · 3.10.0 |
+| Jan | 本地运行 | winget `Jan.Jan` | Jan · 0.8.6 |
+| AnythingLLM | 本地运行 | 官网下载 | winget 中未收录 |
 
-部分站点内容由 JavaScript 动态加载，文本提取无法完整核实全部下载按钮。微软 WinGet 清单目录辅助确认了以下 Windows 包的存在，不等同于官方背书或安装实测：
+说明：
 
-- [ByteDance.Doubao](https://github.com/microsoft/winget-pkgs/tree/master/manifests/b/ByteDance/Doubao)
-- [MoonshotAI.Kimi](https://github.com/microsoft/winget-pkgs/tree/master/manifests/m/MoonshotAI/Kimi)
-- [Tencent.Yuanbao](https://github.com/microsoft/winget-pkgs/tree/master/manifests/t/Tencent/Yuanbao)
-- [ByteDance.Trae](https://github.com/microsoft/winget-pkgs/tree/master/manifests/b/ByteDance/Trae)
-- [Anthropic.Claude](https://github.com/microsoft/winget-pkgs/tree/master/manifests/a/Anthropic/Claude)
-- [Google.Antigravity](https://github.com/microsoft/winget-pkgs/tree/master/manifests/g/Google/Antigravity)
-- [Anysphere.Cursor](https://github.com/microsoft/winget-pkgs/tree/master/manifests/a/Anysphere/Cursor)
-
-离线条件参考 [LM Studio 离线说明](https://lmstudio.ai/docs/app/offline) 和 [模型下载说明](https://lmstudio.ai/docs/app/basics/download-model)。本轮没有下载或注入模型，不承诺“安装后断网即用”。
-
-推荐规则是用途匹配，尚未做模型能力排名、硬件基准、套餐价格和地区实时检测。国内组代表常见中文服务入口，不表示每条网络均保证可访问；海外组要求用户自行确认可访问及账号资格。纪要场景只整理已有文本；离线编程只表示代码问答，不表示本地 IDE 或智能体已部署。
+- “国内可用”指在国内常规网络下可以直接使用，不保证每个地区、每条线路都可访问；“需海外网络”的软件需要用户自己具备相应网络和账号。
+- 推荐规则是按用途匹配，不是模型能力排名，也不包含价格和额度的实时信息。
+- 本地模型建议使用 Qwen3 系列（阿里通义开源，Apache-2.0），体积为 Ollama `qwen3:*` Q4 量化版本的大致大小。
