@@ -12,7 +12,7 @@
   "source": "https://chatglm.cn/favicon.ico"
  },
  "chatgpt": {
-  "full": false,
+  "full": true,
   "source": "https://cdn.oaistatic.com/_next/static/media/apple-touch-icon.82af6fe1.png"
  },
  "cherry": {
