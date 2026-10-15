@@ -118,7 +118,8 @@ async function main() {
   await page.getByRole('button', { name: '安装并完成配置' }).click();
   await page.getByRole('heading', { name: '下载与更新' }).waitFor();
   await page.waitForSelector('.job.running');
-  await page.waitForFunction(() => window.__aistation.state.jobs.some((j) => j.status === 'running' && j.progress > 0));
+  // 真实 winget 的输出被重定向时不打印进度条，界面显示“进行中”动画；模拟 winget 会输出下载进度
+  if (!REAL) await page.waitForFunction(() => window.__aistation.state.jobs.some((j) => j.status === 'running' && j.progress > 0));
   await shot(page, 'tasks-running');
   // 真实 winget 下载安装可能需要几分钟
   await page.waitForFunction(() => window.__aistation.state.jobs.length === 2 &&
