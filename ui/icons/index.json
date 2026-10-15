@@ -11,6 +11,10 @@
   "full": false,
   "source": "https://chatglm.cn/favicon.ico"
  },
+ "chatgpt": {
+  "full": false,
+  "source": "https://cdn.oaistatic.com/_next/static/media/apple-touch-icon.82af6fe1.png"
+ },
  "cherry": {
   "full": false,
   "source": "https://www.cherryai.com.cn/assets/favicon-BmbgeFTf.png"
@@ -70,6 +74,18 @@
  "ollama": {
   "full": false,
   "source": "https://ollama.com/public/apple-touch-icon.png"
+ },
+ "perplexity": {
+  "full": false,
+  "source": "https://www.perplexity.ai/apple-touch-icon.png"
+ },
+ "qianwen": {
+  "full": false,
+  "source": "https://img.alicdn.com/imgextra/i2/O1CN01taBbMS1CfyJoOt0lB_!!6000000000109-2-tps-80-80.png"
+ },
+ "trae": {
+  "full": true,
+  "source": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/trae_website_prod_cn/favicon.png"
  },
  "wps": {
   "full": false,

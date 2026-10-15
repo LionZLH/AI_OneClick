@@ -50,6 +50,14 @@ class LinkParser(HTMLParser):
             self.icons.append((rel, a["href"], a.get("sizes", ""), a.get("type", "")))
 
 
+KNOWN_ICONS = {
+    "qianwen": "https://img.alicdn.com/imgextra/i2/O1CN01taBbMS1CfyJoOt0lB_!!6000000000109-2-tps-80-80.png",
+    "trae": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/trae_website_prod_cn/favicon.png",
+    "perplexity": "https://www.perplexity.ai/apple-touch-icon.png",
+    "chatgpt": "https://cdn.oaistatic.com/_next/static/media/apple-touch-icon.82af6fe1.png",
+}
+
+
 def candidates(app):
     seen, out = set(), []
 
@@ -58,6 +66,8 @@ def candidates(app):
             seen.add(url)
             out.append((url, hint))
 
+    if app.get("id") in KNOWN_ICONS:
+        add(KNOWN_ICONS[app["id"]], "known")
     for u in ([app["iconUrl"]] if app.get("iconUrl") else []):
         add(u, "catalog")
     for page in filter(None, [app.get("iconPage"), app.get("homepage"), app.get("webUrl")]):
