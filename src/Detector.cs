@@ -202,6 +202,7 @@ namespace AIStation
                     if (s.Name.IndexOf("卸载", StringComparison.Ordinal) >= 0 ||
                         s.Name.IndexOf("uninstall", StringComparison.OrdinalIgnoreCase) >= 0) continue;
                     info.AppId = s.AppId;
+                    if (info.ExePath == null) info.ExePath = ExeFromAppId(s.AppId);
                     if (!info.Installed)
                     {
                         info.Installed = true;
@@ -223,7 +224,7 @@ namespace AIStation
                 }
             }
 
-            info.ExePath = ResolveExe(app, info.Reg);
+            info.ExePath = ResolveExe(app, info.Reg) ?? info.ExePath;
             if (!info.Installed && info.ExePath != null)
             {
                 info.Installed = true;
@@ -250,6 +251,13 @@ namespace AIStation
                     var hit = FindIn(dir, app.ExeNames, 1);
                     if (hit != null) return hit;
                 }
+            }
+            // 注册表图标指向的主程序（文件名不在已知列表中时的兜底）
+            if (e != null)
+            {
+                var icon = CleanPath(e.DisplayIcon);
+                if (icon != null && icon.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) && File.Exists(icon) && !IsHelperExe(icon))
+                    return icon;
             }
             if (!IsWindows) return null;
             var roots = new List<string>();
@@ -285,6 +293,42 @@ namespace AIStation
             }
             var id = app.Id.ToLowerInvariant();
             return name.Contains(id) || (app.Name.Length >= 3 && name.Contains(app.Name.ToLowerInvariant().Replace(" ", "")));
+        }
+
+        private static bool IsHelperExe(string path)
+        {
+            var f = Path.GetFileName(path).ToLowerInvariant();
+            return f.StartsWith("unins") || f.StartsWith("uninstall") || f == "update.exe" || f.Contains("setup") || f.Contains("installer");
+        }
+
+        // 开始菜单中 Win32 程序的 AppId 常是“已知文件夹 GUID + 相对路径”
+        private static readonly Dictionary<string, string> KnownFolders = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "{6D809377-6AF0-444B-8957-A3773F02200E}", Environment.GetEnvironmentVariable("ProgramW6432") ?? Environment.GetEnvironmentVariable("ProgramFiles") },
+            { "{7C5A40EF-A0FB-4BFC-874A-C0F2E0B9FA8E}", Environment.GetEnvironmentVariable("ProgramFiles(x86)") },
+            { "{905E63B6-C1BF-494E-B29C-65B732D3D21A}", Environment.GetEnvironmentVariable("ProgramFiles") },
+            { "{5CD7AEE2-2219-4A67-B85D-6C9CE15660CB}", Path.Combine(Paths.LocalAppData, "Programs") },
+            { "{F1B32785-6FBA-4FCF-9D55-7B8E7F157091}", Paths.LocalAppData },
+            { "{3EB685DB-65F9-4CF6-A03A-E3EF65729F3D}", Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) }
+        };
+
+        public static string ExeFromAppId(string appId)
+        {
+            if (string.IsNullOrEmpty(appId) || !appId.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) return null;
+            string path = null;
+            try
+            {
+                if (appId.StartsWith("{"))
+                {
+                    var end = appId.IndexOf('}');
+                    string root;
+                    if (end > 0 && KnownFolders.TryGetValue(appId.Substring(0, end + 1), out root) && !string.IsNullOrEmpty(root))
+                        path = Path.Combine(root, appId.Substring(end + 1).TrimStart('\\'));
+                }
+                else if (Path.IsPathRooted(appId)) path = appId;
+                return path != null && File.Exists(path) && !IsHelperExe(path) ? path : null;
+            }
+            catch (Exception) { return null; }
         }
 
         private static bool IsAppExe(AppDef app, string path)

@@ -41,6 +41,7 @@ try {
     $l = Post 'launch' @{ id = $AppId }
     if (-not $l.ok) { throw "启动失败：$($l.error)" }
     Start-Sleep 8
+    if (-not $info.exe) { throw '没有解析出主程序路径（启动台无法显示真实图标）' }
     $icon = Invoke-WebRequest -Uri "$base/icon?id=$AppId&t=$token" -UseBasicParsing
     Write-Host "图标：$($icon.Headers['Content-Type']) $($icon.RawContentLength) 字节"
     if ($info.exe) { Get-Process | Where-Object { $_.Path -eq $info.exe } | Stop-Process -Force -ErrorAction SilentlyContinue }

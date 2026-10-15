@@ -12,7 +12,13 @@ $bmp.Save((Join-Path $Out 'window-smoke.png'))
 $edge = Get-CimInstance Win32_Process -Filter "Name='msedge.exe'" | Where-Object { $_.CommandLine -match 'AIStation' }
 Write-Host "AIStation 进程存活：$(-not $p.HasExited)；Edge 应用窗口进程：$(@($edge).Count)"
 $edge | Select-Object -First 1 | ForEach-Object { Write-Host $_.CommandLine }
+$titles = @(Get-Process msedge -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle } | ForEach-Object { $_.MainWindowTitle })
+Write-Host "Edge 窗口标题：$($titles -join ' | ')"
+$alive = -not $p.HasExited
 $edge | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
 Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
-if ($p.HasExited -and $p.ExitCode -ne 0) { exit 1 }
-if (@($edge).Count -eq 0) { exit 1 }
+if (-not $alive) { Write-Host 'AIStation 进程意外退出'; exit 1 }
+if (@($edge).Count -eq 0) { Write-Host '没有打开 Edge 应用窗口'; exit 1 }
+if (-not ($titles -contains 'AI Station')) { Write-Host '没有找到标题为 AI Station 的窗口'; exit 1 }
+Write-Host '窗口冒烟测试通过'
+exit 0
