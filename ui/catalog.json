@@ -10,6 +10,19 @@
     { "id": "voice",   "label": "语音对话",       "desc": "像打电话一样聊天、练口语", "icon": "mic" },
     { "id": "private", "label": "本地私有使用",   "desc": "数据不出电脑，可断网运行", "icon": "lock" }
   ],
+  "pricing": {
+    "free":     { "label": "免费" },
+    "freemium": { "label": "免费 + 付费会员" },
+    "paid":     { "label": "付费" }
+  },
+  "accounts": {
+    "phone":     { "label": "手机号登录" },
+    "overseas":  { "label": "需海外账号" },
+    "microsoft": { "label": "微软账号" },
+    "optional":  { "label": "登录可选" },
+    "none":      { "label": "无需账号" },
+    "apikey":    { "label": "需 API Key" }
+  },
   "regions": {
     "cn":     { "label": "国内可用",   "desc": "国内网络可直接使用" },
     "global": { "label": "需海外网络", "desc": "需要能够访问海外服务的网络和账号" },
@@ -18,6 +31,7 @@
   "apps": [
     {
       "id": "doubao", "name": "豆包", "vendor": "字节跳动", "kind": "desktop", "region": "cn",
+      "pricing": "free", "account": "phone", "pricingNote": "免费使用",
       "letter": "豆", "color": "#3c6df0",
       "summary": "全能型 AI 助手：聊天写作、实时语音通话、AI 生图都能做。",
       "scores": { "chat": 3, "voice": 3, "create": 2, "search": 2, "office": 2, "docs": 2 },
@@ -37,6 +51,7 @@
     },
     {
       "id": "kimi", "name": "Kimi", "vendor": "月之暗面", "kind": "desktop", "region": "cn",
+      "pricing": "freemium", "account": "phone", "pricingNote": "基础功能免费，有付费会员",
       "letter": "K", "color": "#1f2329",
       "summary": "擅长超长文档阅读和深度搜索，适合学习与研究。",
       "scores": { "docs": 3, "search": 3, "chat": 2, "office": 2, "code": 1 },
@@ -54,6 +69,7 @@
     },
     {
       "id": "yuanbao", "name": "腾讯元宝", "vendor": "腾讯", "kind": "desktop", "region": "cn",
+      "pricing": "free", "account": "phone", "pricingNote": "免费使用，可用微信登录",
       "letter": "元", "color": "#14a35f",
       "summary": "联网搜索可直接检索微信公众号文章，中文资料覆盖广。",
       "scores": { "search": 3, "chat": 2, "docs": 2 },
@@ -70,6 +86,7 @@
     },
     {
       "id": "qianwen", "name": "千问", "vendor": "阿里巴巴", "kind": "desktop", "region": "cn",
+      "pricing": "free", "account": "phone", "pricingNote": "免费使用",
       "letter": "千", "color": "#615ced",
       "summary": "阿里通义千问客户端：对话、录音转写、文档处理一站式。",
       "scores": { "office": 2, "docs": 2, "chat": 2, "voice": 2 },
@@ -87,6 +104,7 @@
     },
     {
       "id": "chatglm", "name": "智谱清言", "vendor": "智谱 AI", "kind": "desktop", "region": "cn",
+      "pricing": "freemium", "account": "phone", "pricingNote": "基础功能免费，有付费会员",
       "letter": "智", "color": "#2f5bea",
       "summary": "基于 GLM 大模型，内置大量现成的智能体。",
       "scores": { "chat": 2, "docs": 2, "code": 1 },
@@ -102,6 +120,7 @@
     },
     {
       "id": "deepseek", "name": "DeepSeek", "vendor": "深度求索", "kind": "web", "region": "cn",
+      "pricing": "free", "account": "phone", "pricingNote": "网页版免费使用",
       "letter": "D", "color": "#4d6bfe",
       "summary": "以推理见长的国产大模型，网页版打开即用。",
       "scores": { "chat": 3, "code": 2 },
@@ -117,6 +136,7 @@
     },
     {
       "id": "trae", "name": "TRAE 国内版", "vendor": "字节跳动", "kind": "desktop", "region": "cn",
+      "pricing": "freemium", "account": "phone", "pricingNote": "可免费使用，高级额度需付费",
       "letter": "T", "color": "#0f9d74",
       "summary": "AI 编程 IDE，用中文描述需求就能写代码、改 bug。",
       "scores": { "code": 3 },
@@ -129,6 +149,7 @@
     },
     {
       "id": "wps", "name": "WPS Office", "vendor": "金山办公", "kind": "desktop", "region": "cn",
+      "pricing": "freemium", "account": "optional", "pricingNote": "办公软件免费，WPS AI 部分功能需会员",
       "letter": "W", "color": "#d6382f",
       "summary": "国产办公套件，内置 WPS AI：写文档、做 PPT、处理表格。",
       "scores": { "office": 3, "docs": 2 },
@@ -144,6 +165,7 @@
     },
     {
       "id": "jianying", "name": "剪映专业版", "vendor": "字节跳动", "kind": "desktop", "region": "cn",
+      "pricing": "freemium", "account": "phone", "pricingNote": "剪辑免费，部分 AI 功能需会员",
       "letter": "剪", "color": "#111111",
       "summary": "视频剪辑软件，带 AI 字幕、文字成片、AI 配音。",
       "scores": { "create": 3 },
@@ -156,6 +178,7 @@
     },
     {
       "id": "jimeng", "name": "即梦 AI", "vendor": "字节跳动", "kind": "web", "region": "cn",
+      "pricing": "freemium", "account": "phone", "pricingNote": "每日有免费额度，更多次数需会员",
       "letter": "即", "color": "#7b5cff",
       "summary": "AI 绘画与视频生成平台，输入文字就能出图出片。",
       "scores": { "create": 3 },
@@ -168,6 +191,7 @@
     },
     {
       "id": "metaso", "name": "秘塔 AI 搜索", "vendor": "秘塔科技", "kind": "web", "region": "cn",
+      "pricing": "free", "account": "optional", "pricingNote": "免费使用，登录可保存记录",
       "letter": "秘", "color": "#2463eb",
       "summary": "没有广告的 AI 搜索引擎，回答附带参考来源。",
       "scores": { "search": 3 },
@@ -180,6 +204,7 @@
     },
     {
       "id": "chatgpt", "name": "ChatGPT", "vendor": "OpenAI", "kind": "desktop", "region": "global",
+      "pricing": "freemium", "account": "overseas", "pricingNote": "有免费版，Plus 等订阅付费",
       "letter": "G", "color": "#10a37f",
       "summary": "OpenAI 官方客户端，综合能力全面。",
       "scores": { "chat": 3, "voice": 3, "create": 3, "docs": 2, "search": 2, "code": 2, "office": 2 },
@@ -200,6 +225,7 @@
     },
     {
       "id": "claude", "name": "Claude", "vendor": "Anthropic", "kind": "desktop", "region": "global",
+      "pricing": "freemium", "account": "overseas", "pricingNote": "有免费版，Pro 等订阅付费",
       "letter": "C", "color": "#d97757",
       "summary": "长文写作、文档分析和编程见长的官方客户端。",
       "scores": { "chat": 3, "docs": 3, "code": 3, "office": 2 },
@@ -217,6 +243,7 @@
     },
     {
       "id": "gemini", "name": "Gemini", "vendor": "Google", "kind": "desktop", "region": "global",
+      "pricing": "freemium", "account": "overseas", "pricingNote": "有免费版，高级功能需订阅",
       "letter": "G", "color": "#4285f4",
       "summary": "Google 官方桌面版，超长上下文、多模态，结合 Google 搜索。",
       "scores": { "chat": 3, "search": 3, "docs": 3, "create": 2, "voice": 2 },
@@ -235,6 +262,7 @@
     },
     {
       "id": "copilot", "name": "Microsoft Copilot", "vendor": "微软", "kind": "desktop", "region": "global",
+      "pricing": "freemium", "account": "microsoft", "pricingNote": "免费使用，Pro 订阅付费",
       "letter": "M", "color": "#0a7cd7",
       "summary": "微软出品的免费 AI 助手，结合必应搜索。",
       "scores": { "chat": 2, "search": 2, "voice": 2, "create": 2 },
@@ -252,6 +280,7 @@
     },
     {
       "id": "perplexity", "name": "Perplexity", "vendor": "Perplexity AI", "kind": "web", "region": "global",
+      "pricing": "freemium", "account": "optional", "pricingNote": "有免费版，Pro 订阅付费",
       "letter": "P", "color": "#20808d",
       "summary": "研究型 AI 搜索引擎，每个结论都标注来源。",
       "scores": { "search": 3 },
@@ -264,6 +293,7 @@
     },
     {
       "id": "cursor", "name": "Cursor", "vendor": "Anysphere", "kind": "desktop", "region": "global",
+      "pricing": "freemium", "account": "overseas", "pricingNote": "免费额度有限，Pro 订阅付费",
       "letter": "C", "color": "#202020",
       "summary": "主流的 AI 代码编辑器，兼容 VS Code 插件和习惯。",
       "scores": { "code": 3 },
@@ -276,6 +306,7 @@
     },
     {
       "id": "antigravity", "name": "Antigravity", "vendor": "Google", "kind": "desktop", "region": "global",
+      "pricing": "freemium", "account": "overseas", "pricingNote": "有免费额度，用量大需付费",
       "letter": "A", "color": "#1a73e8",
       "summary": "Google 的智能体编程平台，让 AI 自主完成开发任务。",
       "scores": { "code": 3 },
@@ -288,6 +319,7 @@
     },
     {
       "id": "lmstudio", "name": "LM Studio", "vendor": "Element Labs", "kind": "desktop", "region": "local",
+      "pricing": "free", "account": "none", "pricingNote": "软件免费，模型免费下载",
       "letter": "LM", "color": "#5a3fd8",
       "summary": "在本机运行开源大模型的图形化工具，下载模型后可断网使用。",
       "scores": { "private": 3, "chat": 2, "docs": 2, "code": 1 },
@@ -305,6 +337,7 @@
     },
     {
       "id": "ollama", "name": "Ollama", "vendor": "Ollama", "kind": "desktop", "region": "local",
+      "pricing": "free", "account": "none", "pricingNote": "开源免费",
       "letter": "O", "color": "#3a3a3a", "advanced": true,
       "summary": "流行的本地模型运行引擎，自带简洁的聊天窗口。",
       "scores": { "private": 2, "chat": 2 },
@@ -321,6 +354,7 @@
     },
     {
       "id": "gpt4all", "name": "GPT4All", "vendor": "Nomic", "kind": "desktop", "region": "local",
+      "pricing": "free", "account": "none", "pricingNote": "开源免费",
       "letter": "4", "color": "#2c7a7b",
       "summary": "对没有独立显卡的普通电脑友好的本地 AI 客户端，带本地知识库。",
       "scores": { "private": 3, "chat": 2, "docs": 2 },
@@ -338,6 +372,7 @@
     },
     {
       "id": "jan", "name": "Jan", "vendor": "Jan", "kind": "desktop", "region": "local",
+      "pricing": "free", "account": "none", "pricingNote": "开源免费",
       "letter": "J", "color": "#1d4ed8",
       "summary": "开源、注重隐私的本地 AI 客户端，界面简洁。",
       "scores": { "private": 2, "chat": 2 },
@@ -354,6 +389,7 @@
     },
     {
       "id": "anythingllm", "name": "AnythingLLM", "vendor": "Mintplex Labs", "kind": "desktop", "region": "local",
+      "pricing": "free", "account": "none", "pricingNote": "开源免费",
       "letter": "A", "color": "#0e7490", "advanced": true,
       "summary": "私有知识库工具：导入文档，让 AI 基于你的资料回答问题。",
       "scores": { "private": 3, "docs": 3 },
@@ -370,6 +406,7 @@
     },
     {
       "id": "cherry", "name": "Cherry Studio", "vendor": "CherryHQ", "kind": "desktop", "region": "cn",
+      "pricing": "free", "account": "apikey", "pricingNote": "软件免费，在线模型按 API 用量付费",
       "letter": "C", "color": "#e5484d", "advanced": true,
       "summary": "多合一 AI 客户端，一个界面接入几十种模型服务，带知识库。",
       "scores": { "chat": 2, "docs": 2, "private": 2 },

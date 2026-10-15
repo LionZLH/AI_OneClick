@@ -152,6 +152,18 @@
     return '<span class="tag ' + app.region + '">' + esc(catalog.regions[app.region].label) + '</span>';
   }
 
+  function priceText(app) {
+    const parts = [];
+    if (catalog.pricing && catalog.pricing[app.pricing]) parts.push(catalog.pricing[app.pricing].label);
+    if (catalog.accounts && catalog.accounts[app.account]) parts.push(catalog.accounts[app.account].label);
+    return parts.join(' · ');
+  }
+
+  function metaLine(app) {
+    const t = priceText(app);
+    return t ? '<div class="meta">' + icon(app.account === 'overseas' ? 'globe' : 'info') + esc(t) + '</div>' : '';
+  }
+
   function kindTag(app) {
     return app.kind === 'web' ? '<span class="tag">网页版</span>' : '';
   }
@@ -208,7 +220,53 @@
     } catch (e) { fail(e); }
   }
 
-  function install(ids) {
+  /** 安装前检查：block = 不能装的原因；warns = 装之前需要知道的事。 */
+  function preCheck(app) {
+    const r = { block: null, warns: [] };
+    if (!app || app.kind === 'web') return r;
+    const h = hw() || {};
+    const net = S.network;
+    const fromOffline = ((S.offline && S.offline.installers) || []).some((f) => f.appId === app.id);
+    if (h.os && h.os.windows && h.os.build && h.os.build < 17763) r.block = 'Windows 版本太旧，需要 Windows 10（1809）或更高版本';
+    else if (!fromOffline && net && net.cn === false && net.global === false) r.block = '这台电脑现在没有联网';
+    else if (app.requires && app.requires.avx2 && h.avx2 === false) r.block = '这台电脑的 CPU 不支持 AVX2，装了也无法运行';
+    if (!fromOffline && app.install.source !== 'manual' && S.winget.checked && !S.winget.available) r.warns.push('这台电脑没有 winget，无法自动安装，需要从官网下载');
+    if (app.region === 'global' && net && net.global === false) r.warns.push('检测到无法访问海外服务，装好后可能无法使用');
+    if (app.requires && app.requires.ramGB && h.ramGB && h.ramGB < app.requires.ramGB - 1.5) r.warns.push('内存只有 ' + Math.round(h.ramGB) + 'GB，运行会比较慢');
+    if (h.disk && h.disk.freeGB != null && h.disk.freeGB < 3) r.warns.push('系统盘只剩 ' + h.disk.freeGB + 'GB，可能不够安装');
+    if (app.account === 'overseas') r.warns.push('需要海外账号才能登录使用');
+    if (app.account === 'apikey') r.warns.push('需要自备模型服务的 API Key 才能使用在线模型');
+    return r;
+  }
+
+  function precheckModal(ids, items) {
+    const okCount = ids.filter((id) => !preCheck(byId[id]).block).length;
+    return {
+      title: '安装前请留意',
+      body: '<div class="pre-list">' + items.map(({ app, c }) => `
+        <div class="pre-item">${avatar(app, 'sm')}<div><b>${esc(app.name)}</b>
+          ${c.block ? '<div class="bad">' + icon('x') + '无法安装：' + esc(c.block) + '</div>' : ''}
+          ${c.warns.map((w) => '<div class="warn">' + icon('alert') + esc(w) + '</div>').join('')}
+        </div></div>`).join('') + '</div>',
+      actions: [{ label: '取消', act: 'modal-close', cls: 'ghost' }].concat(okCount
+        ? [{ label: okCount === ids.length ? '知道了，继续安装' : '安装其余 ' + okCount + ' 款', act: 'confirm-install', cls: 'primary' }]
+        : [])
+    };
+  }
+
+  /** 返回 Promise<{ pending }>：pending 表示弹出了安装前提醒，等待用户确认。 */
+  function install(ids, checked) {
+    if (!checked) {
+      const items = ids.map((id) => ({ app: byId[id], c: preCheck(byId[id]) }))
+        .filter((x) => x.app && x.app.kind !== 'web' && !inst(x.app.id) && (x.c.block || x.c.warns.length));
+      if (items.length) {
+        ui.pendingInstall = ids;
+        ui.modal = precheckModal(ids, items);
+        render();
+        return Promise.resolve({ pending: true });
+      }
+    }
+    ids = ids.filter((id) => !preCheck(byId[id]).block);
     const desktop = ids.filter((id) => byId[id] && byId[id].kind !== 'web' && !inst(id));
     const web = ids.filter((id) => byId[id] && byId[id].kind === 'web' && !webAdded(id));
     const tasks = [];
@@ -221,7 +279,7 @@
       }
       if (web.length) toast('已添加到「我的 AI」');
       render();
-    }).catch(fail);
+    }).then(() => ({ pending: false })).catch((e) => { fail(e); return { pending: false }; });
   }
 
   async function launch(id) {
@@ -403,6 +461,7 @@
           <div class="name">${esc(app.name)} <span class="muted" style="font-weight:400;font-size:13px">${esc(app.vendor)}</span>
             ${regionTag(app)} ${kindTag(app)} ${item.installed ? '<span class="tag ok">已安装</span>' : ''}</div>
           <div class="summary">${esc(app.summary)}</div>
+          ${metaLine(app)}
           <div class="why">${item.reasons.map((r) => `<div><span class="tag">${esc(needById[r.need].label)}</span><span>${esc(r.text)}</span></div>`).join('')}</div>
           ${notes ? '<div class="notes">' + notes + '</div>' : ''}
         </div>
@@ -511,6 +570,18 @@
       <button class="btn sm" data-act="nav" data-id="tasks">查看进度</button></div>`;
   }
 
+  function selfInstallBanner() {
+    const sys = S.system || {};
+    const off = S.offline || {};
+    if (!sys.windows || sys.runningInstalled || S.profile.installPromptDismissed || off.appsDir || off.modelsDir) return '';
+    const text = sys.selfInstalled
+      ? '这台电脑已经安装了 AI Station，你现在打开的是另一个副本（比如下载文件夹里的）。可以用它覆盖安装，以后从桌面图标打开。'
+      : 'AI Station 还没有安装到这台电脑。安装后可以从桌面和开始菜单打开，不用再去下载文件夹里找，也不需要管理员权限。';
+    return `<div class="banner">${icon('download')}<span class="grow">${text}</span>
+      <button class="btn sm primary" data-act="self-install">${sys.selfInstalled ? '覆盖安装' : '安装到本机'}</button>
+      <button class="btn sm ghost" data-act="dismiss-install">以后再说</button></div>`;
+  }
+
   function viewHome() {
     const launches = S.profile.launches || {};
     const mine = apps.filter((a) => owned(a.id))
@@ -541,7 +612,7 @@
         <p>${mine.length ? '你的 ' + mine.length + ' 个 AI 工具都在这里，点击即可启动。' : '在这里统一启动和管理你的 AI 软件。'}</p></div>
         <div class="actions"><button class="btn" data-act="refresh">${icon('refresh', S.scanning ? 'spin' : '')}刷新</button>
         <button class="btn primary" data-act="nav" data-id="library">${icon('grid')}添加软件</button></div></div>
-      ${jobsBanner()}${wingetBanner()}
+      ${jobsBanner()}${wingetBanner()}${selfInstallBanner()}
       ${body}
       ${pending.length ? `<h2 class="section">${icon('sparkles')}为你推荐，还没装 <span class="muted">来自问卷结果</span></h2>
         <div class="chips">${pending.map((id) => `<button class="chip" data-act="install-one" data-id="${id}">${avatar(byId[id], 'sm')}${esc(byId[id].name)}<span class="muted">${byId[id].kind === 'web' ? '添加' : '安装'}</span></button>`).join('')}</div>` : ''}
@@ -591,6 +662,32 @@
     }
     if (j.phase === 'install' && j.phaseStartedAt) return '已用时 ' + fmtDuration((Date.now() - j.phaseStartedAt) / 1000);
     return '';
+  }
+
+  const HINTS = {
+    running: { text: '很多软件关掉窗口后仍在托盘或后台运行。点击「关闭并重试」，AI Station 会先尝试正常关闭它，关不掉再强制结束。请先保存其中没保存的内容。' },
+    disk: { text: '系统盘空间不够。可以用 Windows 自带的「存储」功能清理临时文件，或卸载不用的软件，然后点「重试」。', actions: [['open-storage', '打开存储设置']] },
+    network: { text: '下载没有成功，通常是网络不稳定。确认能正常上网后点「重试」；多次失败可以改从官网下载。' },
+    uac: { text: '安装需要你在弹出的「用户账户控制」窗口里点“是”。重试时留意任务栏上闪烁的确认窗口。' },
+    blocked: { text: '安装被系统策略或安全软件拦截了。可以在安全软件里暂时允许后重试，或改从官网下载。' },
+    hash: { text: '安装包校验没有通过，通常是软件刚发布新版本、软件源还没同步。过几个小时再试，或改从官网下载。' },
+    unsupported: { text: '这台电脑的系统版本或处理器不受这个软件支持，可以到官网查看系统要求。' },
+    reboot: { text: '需要先重启电脑，重启后再回来点「重试」。' },
+    nowinget: { text: '自动安装需要 Windows 自带的「应用安装程序」（winget）。可以从 Microsoft Store 免费获取，或直接从官网下载这个软件。', actions: [['open-winget-store', '获取应用安装程序']] },
+    'lms-missing': { text: '请先打开一次 LM Studio（它会自动准备好下载工具），关掉后回到这里点「重试」。', actions: [['launch-app:lmstudio', '打开 LM Studio']] },
+    'lms-failed': { text: '可以打开 LM Studio，在“发现”页搜索模型名称手动下载。', actions: [['launch-app:lmstudio', '打开 LM Studio']] },
+    unknown: { text: '可以先点「重试」。如果仍然失败，点「导出问题报告」，把桌面上生成的文件发给技术支持。' }
+  };
+
+  function jobHelp(j) {
+    const h = HINTS[j.hint];
+    if (!h) return '';
+    const acts = (h.actions || []).map(([act, label]) => {
+      const [a, id] = act.split(':');
+      return `<button class="btn sm" data-act="${a}" ${id ? 'data-id="' + id + '"' : ''}>${esc(label)}</button>`;
+    }).join('');
+    return `<div class="help">${icon('info')}<div><div>${esc(h.text)}</div>
+      <div class="row">${acts}<button class="btn sm ghost" data-act="export-report">${icon('download')}导出问题报告</button></div></div></div>`;
   }
 
   function jobSteps(j) {
@@ -646,6 +743,7 @@
           ${own || jobFor(a.id) ? '' : `<button class="check ${on ? 'on' : ''}" data-act="lib-toggle" data-id="${a.id}" title="选择" aria-pressed="${on}">${icon('check')}</button>`}
           <div class="top">${avatar(a)}<div><div class="title">${esc(a.name)}${own ? '<span class="tag ok">' + (a.kind === 'web' ? '已添加' : '已安装') + '</span>' : ''}</div><div class="vendor">${esc(a.vendor)}</div></div></div>
           <div class="desc">${esc(a.summary)}</div>
+          ${metaLine(a)}
           <div class="bottom"><div class="tags">${regionTag(a)}${kindTag(a)}${a.advanced ? '<span class="tag">进阶</span>' : ''}</div>${appAction(a, true)}</div>
         </div>`;
       }).join('')}</div>` : `<div class="empty"><div class="art">${icon('search')}</div><h3>没有找到匹配的软件</h3><p>换个关键词或筛选条件试试。</p></div>`}
@@ -659,11 +757,12 @@
   }
 
   function actionName(action) {
-    return { install: '安装', upgrade: '更新', uninstall: '卸载', 'pull-model': '下载模型', 'import-model': '导入模型' }[action] || action;
+    return { install: '安装', upgrade: '更新', uninstall: '卸载', 'pull-model': '下载模型', 'lms-get': '下载模型', 'import-model': '导入模型' }[action] || action;
   }
 
   function jobTitle(j) {
-    if (j.action === 'pull-model') return '下载模型 ' + (j.arg || '');
+    if (j.action === 'pull-model') return '下载模型 ' + (j.arg || '') + '（Ollama）';
+    if (j.action === 'lms-get') return '下载模型 ' + (j.arg || '') + '（LM Studio）';
     if (j.action === 'import-model') return '导入模型 ' + (j.arg || '') + ' → ' + ({ lmstudio: 'LM Studio', ollama: 'Ollama', gpt4all: 'GPT4All' }[j.target] || j.target);
     return actionName(j.action) + ' ' + (byId[j.appId] ? byId[j.appId].name : j.appId);
   }
@@ -711,19 +810,50 @@
             ${jobSteps(j)}
             ${running ? `<div class="bar ${pct == null ? 'busy' : ''}"><i style="width:${pct == null ? 30 : pct}%"></i></div>` : ''}
             ${jobDetail(j) ? `<div class="detail">${esc(jobDetail(j))}</div>` : ''}
-            ${j.hint === 'running' && j.status === 'failed' ? `<div class="detail">很多软件关掉窗口后仍在托盘或后台运行。点击「关闭并重试」，AI Station 会先尝试正常关闭它，关不掉再强制结束。请先保存其中未保存的内容。</div>` : ''}
+            ${(j.status === 'failed' || j.status === 'manual') ? jobHelp(j) : ''}
             ${j.log && j.log.length ? `<details data-job="${j.id}" ${ui.openLogs && ui.openLogs.has(j.id) ? 'open' : ''}><summary>详细输出</summary><pre>${esc(j.log.join('\n'))}</pre></details>` : ''}
           </div>`;
       }).join('')}</div>` : `<div class="empty"><div class="art">${icon('download')}</div><h3>没有任务</h3><p>在软件库中安装软件，或在「我的 AI」中更新、卸载软件时，进度会显示在这里。</p></div>`}
     `);
   }
 
+  function loadLocalModels() {
+    if (ui.localModelsLoading) return;
+    ui.localModelsLoading = true;
+    api('local-models', {}).then((r) => { ui.localModels = r; }).catch(() => {}).then(() => {
+      ui.localModelsLoading = false;
+      if (ui.view === 'models') render();
+    });
+  }
+
   function viewModels() {
     const h = hw();
     const m = Recommend.modelAdvice(h || {});
     const ollama = inst('ollama'), lm = inst('lmstudio'), g4a = inst('gpt4all');
-    const pulling = (tag) => S.jobs.some((j) => j.action === 'pull-model' && j.arg === tag && (j.status === 'queued' || j.status === 'running'));
+    const active = (pred) => S.jobs.some((j) => (j.status === 'queued' || j.status === 'running') && pred(j));
+    const pulling = (tag) => active((j) => j.action === 'pull-model' && j.arg === tag);
+    const preparing = active((j) => (j.appId === 'ollama' && j.action === 'install') || j.action === 'pull-model');
+    const lmGetting = active((j) => j.action === 'lms-get');
     const models = (S.offline && S.offline.models) || [];
+    const have = (ui.localModels && ui.localModels.ollama) || [];
+    const hasRec = have.some((n) => n === m.ollama || n === m.ollama + ':latest');
+    if (ollama && !ui.localModels && !ui.localModelsLoading) loadLocalModels();
+
+    let main;
+    if (preparing) {
+      main = `<div class="row">${icon('loader', 'spin')}<span>正在准备，下载进度见「下载与更新」。</span>
+        <button class="btn sm" data-act="nav" data-id="tasks">查看进度</button></div>`;
+    } else if (!ollama) {
+      main = `<button class="btn primary lg" data-act="prepare-local" data-id="${m.ollama}">${icon('sparkles')}一键准备：安装 Ollama + 下载 ${esc(m.label)}</button>
+        <p class="muted" style="margin:10px 0 0">共需下载约 ${(m.sizeGB + 1.2).toFixed(1)}GB，全程自动完成。准备好后可以断网使用。</p>`;
+    } else if (!hasRec) {
+      main = `<button class="btn primary lg" data-act="pull-model" data-id="${m.ollama}" ${pulling(m.ollama) ? 'disabled' : ''}>${icon('download')}下载 ${esc(m.label)}（约 ${m.sizeGB}GB）</button>
+        ${have.length ? '<p class="muted" style="margin:10px 0 0">已有模型：' + have.map(esc).join('、') + '</p>' : ''}`;
+    } else {
+      main = `<button class="btn success lg" data-act="start-chat" data-id="${m.ollama}">${icon('chat')}开始对话</button>
+        <p class="muted" style="margin:10px 0 0">已下载：${have.map(esc).join('、')}。在 Ollama 窗口里选择 ${esc(m.ollama)} 就能开始聊天。</p>`;
+    }
+
     return shell(`
       <div class="page-head"><div><h1>本地模型</h1><p>在自己的电脑上运行开源大模型：对话内容不出本机，准备好后可以断网使用。</p></div></div>
       <div class="panel">
@@ -734,19 +864,20 @@
         </div>
         <div class="tierbar">${m.tiers.map((t) => `<div class="${t.key === m.tier ? 'on' : ''}"><b>${t.label}</b>${t.level} · ${t.sizeGB}GB</div>`).join('')}</div>
       </div>
-      <div class="cols" style="margin-top:14px">
-        <div class="panel">
-          <h3>用 Ollama 一键下载</h3>
-          <p class="lead">${ollama ? 'Ollama 已安装，可以直接在这里下载模型，下载进度见「下载与更新」。' : '安装 Ollama 后，可以在这里一键下载推荐的模型。'}</p>
-          ${ollama ? `<div class="row">${m.tiers.map((t) => `<button class="btn ${t.key === m.tier ? 'primary' : ''} sm" data-act="pull-model" data-id="${t.ollama}" ${pulling(t.ollama) ? 'disabled' : ''}>${icon('download')}${t.ollama}</button>`).join('')}</div>
-            <p class="muted" style="margin:10px 0 0">也可以在终端运行 <code class="cmd">ollama run ${esc(m.ollama)}</code> 直接对话。</p>`
-            : appAction(byId.ollama)}
-        </div>
-        <div class="panel">
-          <h3>用 LM Studio 下载</h3>
-          <p class="lead">打开 LM Studio，在“发现”页搜索 <code class="cmd">${esc(m.lmSearch)}</code>，选择 Q4_K_M 版本下载即可。</p>
-          ${appAction(byId.lmstudio)}
-        </div>
+      <div class="panel prep">
+        <h3>${icon('sparkles')} 最简单的方式：Ollama</h3>
+        <p class="lead">Ollama 是免费开源的本地模型工具，自带聊天窗口。点一下就能自动安装软件、下载模型。</p>
+        ${main}
+        ${ollama ? `<details class="more-tiers"><summary>下载其他规格</summary><div class="row">${m.tiers.map((t) => `<button class="btn sm" data-act="pull-model" data-id="${t.ollama}" ${pulling(t.ollama) || have.includes(t.ollama) ? 'disabled' : ''}>${have.includes(t.ollama) ? icon('check') : icon('download')}${t.label} · ${t.sizeGB}GB</button>`).join('')}</div></details>` : ''}
+      </div>
+      <div class="panel" style="margin-top:14px">
+        <h3>喜欢图形界面？用 LM Studio</h3>
+        <p class="lead">LM Studio 界面更丰富，可以浏览和切换各种开源模型。${lm ? '可以直接在这里让它下载推荐模型。' : ''}</p>
+        ${lm ? `<div class="row">
+            <button class="btn primary" data-act="lms-get" data-id="${m.lmKey}" ${lmGetting ? 'disabled' : ''}>${icon('download')}在 LM Studio 中下载 ${esc(m.label)}</button>
+            <button class="btn" data-act="launch" data-id="lmstudio">${icon('play')}打开 LM Studio</button></div>
+            <p class="muted" style="margin:10px 0 0">如果提示需要先打开 LM Studio，打开一次再关掉即可。</p>`
+          : appAction(byId.lmstudio)}
       </div>
       <h2 class="section">${icon('folder')}离线包中的模型</h2>
       <div class="panel">
@@ -802,8 +933,14 @@
           <button class="toggle ${S.system.autostart ? 'on' : ''}" data-act="autostart" aria-pressed="${S.system.autostart}" title="开机时自动启动"></button></div>
         <div class="list-row"><div class="grow"><div class="name">重新获取推荐</div><div class="muted">用途或网络环境变了，可以重新做一次问卷</div></div>
           <button class="btn sm" data-act="start-quiz">重新做问卷</button></div>
+        <div class="list-row"><div class="grow"><div class="name">安装到本机</div><div class="muted">${S.system.runningInstalled ? '已安装：' + esc(S.system.installDir) + '，可从桌面和开始菜单打开' : S.system.selfInstalled ? '已安装过，当前运行的是另一个副本，可以用它覆盖安装' : '复制到 ' + esc(S.system.installDir) + '，创建桌面和开始菜单快捷方式'}</div></div>
+          ${S.system.runningInstalled ? '<span class="tag ok">' + icon('check') + '已安装</span>' : `<button class="btn sm" data-act="self-install" ${S.system.windows ? '' : 'disabled'}>${S.system.selfInstalled ? '覆盖安装' : '安装到本机'}</button>`}</div>
         <div class="list-row"><div class="grow"><div class="name">数据与日志</div><div class="muted">${esc(S.system.dataDir)}</div></div>
           <button class="btn sm" data-act="open-data-dir">${icon('folder')}打开文件夹</button></div>
+      </div>
+      <div class="panel" style="margin-top:14px"><h3>遇到问题？</h3>
+        <p class="lead">导出一份问题报告（电脑信息、软件识别结果、安装记录和运行日志，不含账号密码），保存到桌面，发给技术支持即可。</p>
+        <button class="btn" data-act="export-report">${icon('download')}导出问题报告</button>
       </div>
       <div class="panel" style="margin-top:14px"><h3>使用须知与免责声明</h3>${disclaimerHtml()}</div>
       <p class="muted" style="margin-top:18px">AI Station v${esc(S.version)}</p>
@@ -836,6 +973,18 @@
           ${reasons.length ? '<h3>适合用来</h3><ul>' + reasons.map((n) => '<li>' + icon('check') + '<span><b>' + esc(needById[n].label) + '</b>：' + esc(a.why[n]) + '</span></li>').join('') + '</ul>' : ''}
           ${(a.notes || []).length ? '<h3>注意事项</h3><ul>' + a.notes.map((n) => '<li>' + icon('info') + '<span>' + esc(n) + '</span></li>').join('') + '</ul>' : ''}
           ${a.region === 'global' ? '<p class="fine-note">' + icon('globe') + '该软件的服务器位于境外，能否使用取决于你的网络环境和该服务的地区政策。AI Station 不提供任何网络代理服务。<a href="#" data-act="show-disclaimer">使用须知</a></p>' : ''}
+          ${a.kind !== 'web' && !own ? (() => {
+            const c = preCheck(a);
+            if (!c.block && !c.warns.length) return '';
+            return '<h3>安装前检查</h3><ul>' + (c.block ? '<li class="bad">' + icon('x') + '<span>无法安装：' + esc(c.block) + '</span></li>' : '') +
+              c.warns.map((w) => '<li class="warn">' + icon('alert') + '<span>' + esc(w) + '</span></li>').join('') + '</ul>';
+          })() : ''}
+          <h3>费用与账号</h3>
+          <dl class="kv">
+            <dt>费用</dt><dd>${esc((catalog.pricing[a.pricing] || {}).label || '')}：${esc(a.pricingNote || '')}</dd>
+            <dt>账号</dt><dd>${esc((catalog.accounts[a.account] || {}).label || '')}</dd>
+          </dl>
+          <p class="muted" style="font-size:12px;margin:6px 0 0">费用和功能以官网为准。</p>
           <h3>安装信息</h3>
           <dl class="kv">
             <dt>安装方式</dt><dd>${esc(installLabel(a))}</dd>
@@ -982,14 +1131,23 @@
     'rec-confirm': async () => {
       const ids = [...ui.recSel];
       await finishOnboarding({ answers: ui.rec.answers, recommendation: ui.rec.picks.map((p) => p.id) });
-      await install(ids);
       const anyDesktop = ids.some((id) => byId[id].kind !== 'web');
-      go(anyDesktop ? 'tasks' : 'home');
+      ui.afterInstall = anyDesktop ? 'tasks' : 'home';
+      const r = await install(ids);
+      if (!r.pending) go(ui.afterInstall);
     },
-    nav: (el) => { if (el.dataset.id !== 'library') ui.lib.setup = false; go(el.dataset.id); },
+    'confirm-install': async () => {
+      const ids = ui.pendingInstall || [];
+      ui.modal = null;
+      await install(ids, true);
+      const next = ui.afterInstall || (ids.some((id) => byId[id].kind !== 'web') ? 'tasks' : null);
+      ui.afterInstall = null;
+      if (next) go(next); else render();
+    },
+    nav: (el) => { if (el.dataset.id !== 'library') ui.lib.setup = false; if (el.dataset.id === 'models') ui.localModels = null; go(el.dataset.id); },
     refresh: async () => { try { await api('refresh', {}); S.scanning = true; render(); schedulePoll(800); } catch (e) { fail(e); } },
     launch: (el) => launch(el.dataset.id),
-    'install-one': (el) => install([el.dataset.id]),
+    'install-one': (el) => { ui.afterInstall = null; ui.modal = null; return install([el.dataset.id]); },
     'tile-menu': (el, ev) => {
       const r = el.getBoundingClientRect();
       ui.menu = { id: el.dataset.id, x: Math.min(r.left, window.innerWidth - 200), y: Math.min(r.bottom + 4, window.innerHeight - 220) };
@@ -1021,7 +1179,43 @@
       ui.detail = null;
       startJobs([{ action: 'uninstall', appId: a.id, arg: 'close' }], '正在卸载 ' + a.name);
     },
-    'modal-close': () => { ui.modal = null; render(); },
+    'modal-close': () => { ui.modal = null; ui.afterInstall = null; render(); },
+    'open-storage': async () => { try { await api('open', { target: 'storage' }); } catch (e) { fail(e); } },
+    'export-report': async () => {
+      toast('正在生成问题报告…');
+      try {
+        const r = await api('report', {});
+        toast('已保存到桌面：' + r.path.split(/[\\/]/).pop());
+      } catch (e) { fail(e); }
+    },
+    'self-install': async () => {
+      try {
+        const r = await api('self-install', {});
+        if (r.warning) toast(r.warning, 'error');
+        if (r.relaunch) {
+          ui.relaunching = true;
+          root.innerHTML = '<div class="boot">' + icon('check') + '已安装到本机，正在从新位置重新打开 AI Station…<br>这个窗口可以关闭了。</div>';
+          setTimeout(() => window.close(), 2500);
+          return;
+        }
+        if (r.ok) toast('已安装到本机，桌面和开始菜单都有「AI Station」');
+        await refreshState();
+        render();
+      } catch (e) { fail(e); }
+    },
+    'dismiss-install': async () => {
+      try { S.profile = await api('profile', { installPromptDismissed: true }); } catch (e) { fail(e); }
+      render();
+    },
+    'prepare-local': (el) => startJobs([
+      { action: 'install', appId: 'ollama' },
+      { action: 'pull-model', appId: 'ollama', arg: el.dataset.id }
+    ], '开始准备本地 AI：先安装 Ollama，再下载模型'),
+    'lms-get': (el) => startJobs([{ action: 'lms-get', appId: 'lmstudio', arg: el.dataset.id }], '已开始下载，进度见「下载与更新」'),
+    'start-chat': async (el) => {
+      try { await api('launch', { id: 'ollama' }); toast('已打开 Ollama，在窗口里选择 ' + el.dataset.id + ' 就能开始聊天'); }
+      catch (e) { fail(e); }
+    },
     'job-close-retry': (el) => {
       const j = S.jobs.find((x) => x.id === +el.dataset.id);
       if (j) startJobs([{ action: j.action, appId: j.appId, arg: 'close', target: j.target }], '正在关闭 ' + (byId[j.appId] ? byId[j.appId].name : '') + ' 后重试');
@@ -1048,8 +1242,9 @@
       const ids = [...ui.lib.sel].filter((id) => !owned(id));
       ui.lib.sel.clear();
       ui.lib.setup = false;
-      await install(ids);
-      if (ids.some((id) => byId[id].kind !== 'web')) go('tasks');
+      ui.afterInstall = ids.some((id) => byId[id].kind !== 'web') ? 'tasks' : null;
+      const r = await install(ids);
+      if (!r.pending && ui.afterInstall) go(ui.afterInstall);
     },
     'upgrade-all': () => {
       const ids = apps.filter((a) => a.kind !== 'web' && inst(a.id) && (a.install.source === 'winget' || a.install.source === 'msstore')).map((a) => a.id);
@@ -1118,6 +1313,7 @@
   }
 
   async function poll() {
+    if (ui.relaunching) return;
     try {
       const busy = activeJobs().length > 0 || S.scanning || !S.hardware || !S.network || !S.winget.checked;
       if (!busy || Date.now() - lastFull > 15000 || hadActive) {
@@ -1129,6 +1325,7 @@
       }
       // 任务刚结束：给出提示
       const nowActive = activeJobs().length > 0;
+      if (hadActive && !nowActive && ui.view === 'models') { ui.localModels = null; }
       hadActive = nowActive;
       const ticking = S.jobs.some((j) => j.status === 'running' && j.phase === 'install');
       if ((stateKey() !== ui.lastKey || ticking) && !ui.menu) render();

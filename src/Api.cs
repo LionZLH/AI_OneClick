@@ -79,6 +79,45 @@ namespace AIStation
                     return Result(Autostart.Set(Json.Bool(body, "enabled")));
                 case "open-data-dir":
                     return Result(OpenFolder(Paths.DataDir));
+                case "report":
+                {
+                    string file;
+                    var err = Diagnostics.Export(_core, out file);
+                    var d = new Dictionary<string, object>();
+                    d["ok"] = err == null;
+                    d["error"] = err;
+                    d["path"] = file;
+                    return HttpResponse.JsonOf(d);
+                }
+                case "self-install":
+                {
+                    var err = SelfInstall.Install(Program.Version);
+                    var d = new Dictionary<string, object>();
+                    d["ok"] = SelfInstall.IsInstalled;
+                    d["warning"] = err;
+                    d["relaunch"] = false;
+                    if (SelfInstall.IsInstalled && !SelfInstall.RunningFromInstallDir && Program.ExitRequested != null)
+                    {
+                        // 从新位置重新启动，当前进程在响应发出后退出
+                        try
+                        {
+                            SelfInstall.RelaunchInstalled();
+                            d["relaunch"] = true;
+                            var exit = Program.ExitRequested;
+                            new System.Threading.Thread(() => { System.Threading.Thread.Sleep(800); exit(); }) { IsBackground = true }.Start();
+                        }
+                        catch (Exception ex) { d["warning"] = "已安装，但无法从新位置启动：" + ex.Message; }
+                    }
+                    return HttpResponse.JsonOf(d);
+                }
+                case "quit":
+                {
+                    var exit = Program.ExitRequested;
+                    if (exit != null) new System.Threading.Thread(() => { System.Threading.Thread.Sleep(300); exit(); }) { IsBackground = true }.Start();
+                    return Ok();
+                }
+                case "local-models":
+                    return HttpResponse.JsonOf(_core.Jobs.LocalModels());
             }
             return HttpResponse.Error(404, "not found");
         }
@@ -94,7 +133,7 @@ namespace AIStation
 
         private static readonly HashSet<string> Actions = new HashSet<string>
         {
-            "install", "upgrade", "uninstall", "pull-model", "import-model"
+            "install", "upgrade", "uninstall", "pull-model", "import-model", "lms-get"
         };
 
         private HttpResponse CreateJobs(Dictionary<string, object> body)
@@ -107,7 +146,7 @@ namespace AIStation
                 var action = Json.Str(j, "action");
                 var appId = Json.Str(j, "appId");
                 if (!Actions.Contains(action)) return HttpResponse.Error(400, "unknown action");
-                if (action != "pull-model" && action != "import-model" && _core.FindApp(appId) == null)
+                if (action != "pull-model" && action != "import-model" && action != "lms-get" && _core.FindApp(appId) == null)
                     return HttpResponse.Error(400, "unknown app");
                 var job = _core.Jobs.Enqueue(appId, action, Json.Str(j, "arg"), Json.Str(j, "target"));
                 created.Add(job.Id);
@@ -121,6 +160,7 @@ namespace AIStation
         {
             var target = Json.Str(body, "target");
             if (target == "winget-store") return Result(Core.OpenUrl("ms-windows-store://pdp/?ProductId=9NBLGGH4NNS1"));
+            if (target == "storage") return Result(Core.OpenUrl("ms-settings:storagesense"));
             var app = _core.FindApp(Json.Str(body, "id"));
             if (app == null) return HttpResponse.Error(400, "unknown app");
             string url = app.Homepage;

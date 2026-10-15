@@ -13,14 +13,17 @@ using System.Windows.Forms;
 [assembly: AssemblyTitle("AI Station")]
 [assembly: AssemblyProduct("AI Station")]
 [assembly: AssemblyDescription("AI 软件启动器与管理工具")]
-[assembly: AssemblyVersion("2.0.0.0")]
-[assembly: AssemblyFileVersion("2.0.0.0")]
+[assembly: AssemblyVersion("2.1.0.0")]
+[assembly: AssemblyFileVersion("2.1.0.0")]
 
 namespace AIStation
 {
     internal static class Program
     {
-        public const string Version = "2.0.0";
+        public const string Version = "2.1.0";
+
+        /// <summary>由托盘设置：请求整个程序退出。</summary>
+        public static Action ExitRequested;
 
         [STAThread]
         private static int Main(string[] args)
@@ -37,6 +40,19 @@ namespace AIStation
             ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072 | SecurityProtocolType.Tls;
 
             if (opts.SelfTest != null) return SelfTest.Run(opts, opts.SelfTest);
+            if (opts.UninstallSelf) return SelfInstall.Uninstall(opts.Quiet);
+            if (opts.InstallSelf)
+            {
+                var err = SelfInstall.Install(Version);
+                if (err != null) Log.Write("安装到本机：{0}", err);
+                return err == null ? 0 : 1;
+            }
+            if (opts.WaitPid > 0)
+            {
+                // 安装到本机后由旧进程启动：等旧进程退出再接管
+                try { System.Diagnostics.Process.GetProcessById(opts.WaitPid).WaitForExit(15000); }
+                catch (Exception) { }
+            }
 
             Mutex mutex = null;
             if (!opts.Headless)
@@ -116,6 +132,25 @@ namespace AIStation
             catch (Exception ex) { Log.Write("写入实例信息失败: {0}", ex.Message); }
         }
 
+        /// <summary>让正在运行的实例退出（卸载本机副本时使用）。</summary>
+        public static void StopRunningInstance()
+        {
+            try
+            {
+                if (!File.Exists(InstanceFile)) return;
+                var d = Json.ParseObject(File.ReadAllText(InstanceFile));
+                var port = (int)Json.Num(d, "port", 0);
+                using (var wc = new WebClient())
+                {
+                    wc.Headers["X-AIStation-Token"] = Json.Str(d, "token");
+                    wc.Headers["Content-Type"] = "application/json";
+                    wc.UploadString("http://127.0.0.1:" + port.ToString(CultureInfo.InvariantCulture) + "/api/quit", "{}");
+                }
+                Thread.Sleep(1500);
+            }
+            catch (Exception) { }
+        }
+
         private static void NotifyExistingInstance()
         {
             try
@@ -147,6 +182,10 @@ namespace AIStation
         public string DataDir;
         public string Token;      // 测试用：固定令牌
         public string SelfTest;   // 自检并把结果写到该文件
+        public bool InstallSelf;  // 安装到本机（静默）
+        public bool UninstallSelf;// 从本机卸载 AI Station
+        public bool Quiet;
+        public int WaitPid;
 
         public static Options Parse(string[] args)
         {
@@ -164,6 +203,10 @@ namespace AIStation
                     case "--data-dir": o.DataDir = next(); break;
                     case "--token": o.Token = next(); break;
                     case "--selftest": o.SelfTest = next() ?? "selftest.json"; break;
+                    case "--install-self": o.InstallSelf = true; break;
+                    case "--uninstall-self": o.UninstallSelf = true; break;
+                    case "--quiet": o.Quiet = true; break;
+                    case "--wait-pid": int.TryParse(next(), out o.WaitPid); break;
                 }
             }
             return o;

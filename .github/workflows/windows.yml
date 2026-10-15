@@ -57,6 +57,25 @@ jobs:
           npm install --no-save --no-package-lock playwright@1.56.1
           node tests/e2e.mjs --exe dist/AIStation.exe --real --out test-results
 
+      - name: 安装到本机 → 卸载 AI Station 本身
+        if: always()
+        timeout-minutes: 5
+        shell: pwsh
+        run: tests/self-install.ps1
+
+      - name: 一键准备本地 AI（真实安装 Ollama 并下载小模型）
+        if: always()
+        timeout-minutes: 20
+        shell: pwsh
+        run: tests/real-ollama.ps1
+
+      - name: 探查 LM Studio 命令行工具
+        if: always()
+        timeout-minutes: 12
+        shell: pwsh
+        run: tests/probe-lmstudio.ps1
+        continue-on-error: true
+
       - name: 窗口冒烟测试（托盘 + Edge 应用窗口截图）
         if: always()
         timeout-minutes: 3

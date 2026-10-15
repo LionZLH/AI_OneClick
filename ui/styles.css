@@ -519,3 +519,35 @@ code.cmd { padding: 2px 6px; border-radius: 6px; background: var(--surface-2); f
 .avatar.logo img { width: 74%; height: 74%; }
 .avatar.logo.full { background: transparent; box-shadow: none; }
 .avatar.logo.full img { width: 100%; height: 100%; }
+
+/* ---------- 费用 / 账号 ---------- */
+.meta { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-3); }
+.meta svg { width: 13px; height: 13px; }
+.rec .meta { margin: -4px 0 10px; }
+
+/* ---------- 安装前检查 ---------- */
+.pre-list { display: flex; flex-direction: column; gap: 12px; }
+.pre-item { display: flex; gap: 12px; align-items: flex-start; }
+.pre-item b { display: block; margin-bottom: 2px; }
+.pre-item .bad, .pre-item .warn, .drawer li.bad, .drawer li.warn { display: flex; gap: 6px; align-items: flex-start; font-size: 13px; }
+.pre-item .bad, .drawer li.bad { color: var(--danger); }
+.pre-item .warn, .drawer li.warn { color: var(--warn); }
+.pre-item svg, .drawer li.bad svg, .drawer li.warn svg { width: 15px; height: 15px; margin-top: 2px; color: inherit; }
+
+/* ---------- 失败后的自助说明 ---------- */
+.job .help {
+  grid-column: 1 / -1; display: flex; gap: 10px; margin-top: 10px; padding: 12px 14px; border-radius: 10px;
+  background: var(--surface-2); color: var(--text-2); font-size: 13px;
+}
+.job .help > svg { width: 16px; height: 16px; flex: none; margin-top: 2px; color: var(--accent-text); }
+.job .help .row { margin-top: 8px; gap: 6px; }
+
+/* ---------- 本地模型 ---------- */
+.panel.prep { margin-top: 14px; border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); }
+.panel.prep h3 { display: flex; align-items: center; gap: 6px; }
+.panel.prep h3 svg { color: var(--accent-text); }
+.more-tiers { margin-top: 14px; }
+.more-tiers summary { cursor: pointer; color: var(--text-3); font-size: 13px; }
+.more-tiers .row { margin-top: 10px; }
+.boot svg { width: 20px; height: 20px; color: var(--success); }
+.boot { text-align: center; line-height: 1.9; }

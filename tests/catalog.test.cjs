@@ -68,3 +68,12 @@ test('本地软件声明了硬件要求', () => {
     assert.ok(app.requires && app.requires.ramGB, app.id);
   }
 });
+
+test('每款软件标注了费用和账号要求', () => {
+  for (const app of catalog.apps) {
+    assert.ok(catalog.pricing[app.pricing], `${app.id} 费用`);
+    assert.ok(catalog.accounts[app.account], `${app.id} 账号`);
+    assert.ok(app.pricingNote, `${app.id} 费用说明`);
+    if (app.region === 'global') assert.ok(['overseas', 'microsoft', 'optional'].includes(app.account), `${app.id} 海外软件的账号类型`);
+  }
+});

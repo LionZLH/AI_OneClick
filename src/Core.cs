@@ -233,6 +233,16 @@ namespace AIStation
         public void ProbeNetwork()
         {
             bool? cn = null, global = null;
+            var fixedNet = Environment.GetEnvironmentVariable("AISTATION_NETWORK"); // 测试用：cn / global / offline
+            if (!string.IsNullOrEmpty(fixedNet))
+            {
+                var f = new Dictionary<string, object>();
+                f["cn"] = fixedNet != "offline";
+                f["global"] = fixedNet == "global";
+                f["checkedAt"] = Time.NowMs();
+                lock (Sync) NetworkInfo = f;
+                return;
+            }
             var t1 = new Thread(() => { cn = Probe("https://www.baidu.com/"); });
             var t2 = new Thread(() => { global = Probe("https://www.google.com/generate_204"); });
             t1.IsBackground = t2.IsBackground = true;
@@ -317,7 +327,7 @@ namespace AIStation
 
         private static readonly string[] ProfileKeys =
         {
-            "onboarded", "answers", "recommendation", "webShortcuts", "hiddenApps", "trayHintShown", "theme", "disclaimerAccepted"
+            "onboarded", "answers", "recommendation", "webShortcuts", "hiddenApps", "trayHintShown", "theme", "disclaimerAccepted", "installPromptDismissed"
         };
 
         public void PatchProfile(Dictionary<string, object> patch)
@@ -489,7 +499,7 @@ namespace AIStation
         public static string OpenUrl(string url)
         {
             if (string.IsNullOrEmpty(url)) return "没有可用的链接";
-            if (!url.StartsWith("https://") && !url.StartsWith("http://") && !url.StartsWith("ms-windows-store://"))
+            if (!url.StartsWith("https://") && !url.StartsWith("http://") && !url.StartsWith("ms-windows-store://") && !url.StartsWith("ms-settings:"))
                 return "不支持的链接";
             try
             {
@@ -614,7 +624,11 @@ namespace AIStation
             var sys = new Dictionary<string, object>();
             sys["autostart"] = Autostart.IsEnabled();
             sys["dataDir"] = Paths.DataDir;
-            sys["exe"] = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            sys["exe"] = SelfInstall.CurrentExe;
+            sys["selfInstalled"] = SelfInstall.IsInstalled;
+            sys["runningInstalled"] = SelfInstall.RunningFromInstallDir;
+            sys["installDir"] = SelfInstall.InstallDir;
+            sys["windows"] = Environment.OSVersion.Platform == PlatformID.Win32NT;
             d["system"] = sys;
             return d;
         }

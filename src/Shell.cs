@@ -88,11 +88,16 @@ namespace AIStation
 
         public static string Set(bool enabled)
         {
+            return Set(enabled, Application.ExecutablePath);
+        }
+
+        public static string Set(bool enabled, string exe)
+        {
             try
             {
                 using (var k = Registry.CurrentUser.CreateSubKey(RunKey))
                 {
-                    if (enabled) k.SetValue(Name, "\"" + Application.ExecutablePath + "\" --minimized");
+                    if (enabled) k.SetValue(Name, "\"" + exe + "\" --minimized");
                     else if (k.GetValue(Name) != null) k.DeleteValue(Name);
                 }
                 return null;
@@ -133,6 +138,14 @@ namespace AIStation
             _timer.Start();
 
             if (showWindow) ShowWindow();
+            Program.ExitRequested = Shutdown;
+        }
+
+        /// <summary>可从任意线程调用：隐藏托盘图标并退出进程（安装到本机后由新位置的程序接替）。</summary>
+        private void Shutdown()
+        {
+            try { _icon.Visible = false; _icon.Dispose(); } catch (Exception) { }
+            Environment.Exit(0);
         }
 
         private static Icon LoadIcon()

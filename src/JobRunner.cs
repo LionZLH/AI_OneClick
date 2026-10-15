@@ -223,6 +223,7 @@ namespace AIStation
                 case "uninstall": RunUninstall(job); break;
                 case "pull-model": RunOllamaPull(job); break;
                 case "import-model": RunImportModel(job); break;
+                case "lms-get": RunLmsGet(job); break;
                 default: Finish(job, "failed", "未知的任务类型"); break;
             }
         }
@@ -245,7 +246,8 @@ namespace AIStation
                 if (!_core.WingetChecked) _core.CheckWinget();
                 if (_core.WingetVersion == null)
                 {
-                    Finish(job, "manual", "这台电脑没有可用的 winget，请从官网下载安装");
+                    lock (_jobs) job.Hint = "nowinget";
+                    Finish(job, "manual", "这台电脑没有可用的 winget，无法自动安装");
                     return;
                 }
                 RunWingetAction(job, "install");
@@ -275,6 +277,7 @@ namespace AIStation
             {
                 SetPhase(job, "prepare", "正在查询安装包信息…");
                 if (app.Source == "winget") installer = QueryInstaller(job, app);
+                if (!EnoughDisk(job, installer)) return;
             }
             else SetMessage(job, "正在检查…");
 
@@ -285,13 +288,31 @@ namespace AIStation
             finally { monitor.Stop(); }
             job.ExitCode = code;
 
-            string friendly;
-            var outcome = WingetOutcome(code, verb, out friendly);
+            string friendly, hint;
+            var outcome = WingetOutcome(code, verb, out friendly, out hint);
+            lock (_jobs) job.Hint = hint;
             if (outcome == "success" && verb == "install") _core.MarkInstalled(app.Id);
             Finish(job, outcome, friendly);
         }
 
         internal object Lock { get { return _jobs; } }
+
+        /// <summary>安装前检查系统盘剩余空间：至少 1GB，且不少于安装包大小的 3 倍（下载 + 解压 + 安装）。</summary>
+        private bool EnoughDisk(Job job, InstallerInfo installer)
+        {
+            try
+            {
+                var root = Path.GetPathRoot(Environment.GetFolderPath(Environment.SpecialFolder.System));
+                if (string.IsNullOrEmpty(root)) return true;
+                var free = new DriveInfo(root).AvailableFreeSpace;
+                long need = Math.Max(1L << 30, installer != null && installer.Size > 0 ? installer.Size * 3 : 0);
+                if (free >= need) return true;
+                lock (_jobs) job.Hint = "disk";
+                Finish(job, "failed", root.TrimEnd('\\') + " 盘空间不足：剩余 " + FormatBytes(free) + "，至少需要 " + FormatBytes(need));
+                return false;
+            }
+            catch (Exception) { return true; }
+        }
 
         internal void SetPhase(Job job, string phase, string message)
         {
@@ -518,8 +539,13 @@ namespace AIStation
         }
 
         // 常见 winget 返回码，参见 https://github.com/microsoft/winget-cli/blob/master/doc/windows/package-manager/winget/returnCodes.md
-        private static string WingetOutcome(int code, string verb, out string message)
+        /// <summary>
+        /// 把 winget 返回码翻译成中文提示，并给出失败类型（hint），界面据此显示对应的自助解决办法。
+        /// 返回码参见 https://github.com/microsoft/winget-cli/blob/master/doc/windows/package-manager/winget/returnCodes.md
+        /// </summary>
+        private static string WingetOutcome(int code, string verb, out string message, out string hint)
         {
+            hint = null;
             if (code == 0)
             {
                 message = verb == "install" ? "安装完成" : verb == "upgrade" ? "已更新到最新版本" : "已卸载";
@@ -531,20 +557,24 @@ namespace AIStation
                 case 0x8A150061: message = "已经安装过了"; return "success";
                 case 0x8A15010D: message = "已经安装过了"; return "success";
                 case 0x8A150109: message = "完成，需要重启电脑后生效"; return "success";
-                case 0x8A150014: message = "在软件源中找不到该软件"; return "failed";
-                case 0x8A150008: message = "下载失败，请检查网络后重试"; return "failed";
-                case 0x8A150011: message = "安装包校验失败（软件可能刚发布新版本），请稍后重试"; return "failed";
-                case 0x8A150101: message = "软件正在运行，请先关闭它再重试"; return "failed";
-                case 0x8A150102: message = "另一个安装正在进行，请稍后重试"; return "failed";
-                case 0x8A150103: message = "文件被占用，请关闭相关程序后重试"; return "failed";
-                case 0x8A150105: message = "磁盘空间不足"; return "failed";
-                case 0x8A150106: message = "内存不足"; return "failed";
-                case 0x8A150107: message = "网络连接失败"; return "failed";
-                case 0x8A15010A: message = "需要先重启电脑再安装"; return "failed";
-                case 0x8A15010C: message = "安装被取消（可能拒绝了管理员权限确认）"; return "failed";
-                case 0x8A15010F: message = "被系统策略阻止"; return "failed";
+                case 0x8A150014: message = "在软件源中找不到该软件"; hint = "unsupported"; return "failed";
+                case 0x8A150010: message = "没有适合这台电脑的安装包（系统版本或处理器架构不受支持）"; hint = "unsupported"; return "failed";
+                case 0x8A150008: message = "安装包下载失败"; hint = "network"; return "failed";
+                case 0x8A150107: message = "网络连接失败"; hint = "network"; return "failed";
+                case 0x8A150011: message = "安装包校验没有通过"; hint = "hash"; return "failed";
+                case 0x8A150101: message = "软件正在运行，需要先关闭"; hint = "running"; return "failed";
+                case 0x8A150102: message = "另一个安装程序正在运行，请稍后重试"; return "failed";
+                case 0x8A150103: message = "文件被占用，请关闭相关程序后重试"; hint = "running"; return "failed";
+                case 0x8A150105: message = "磁盘空间不足"; hint = "disk"; return "failed";
+                case 0x8A150106: message = "内存不足，请关闭一些程序后重试"; return "failed";
+                case 0x8A15010A: message = "需要先重启电脑再安装"; hint = "reboot"; return "failed";
+                case 0x8A15010C: message = "安装被取消"; hint = "uac"; return "failed";
+                case 0x8A15010F: message = "安装被系统策略阻止"; hint = "blocked"; return "failed";
             }
-            message = VerbName(verb) + "失败（错误码 0x" + ((uint)code).ToString("X8", CultureInfo.InvariantCulture) + "），可展开详情查看输出";
+            if (code == 1223) { message = "安装被取消"; hint = "uac"; return "failed"; }
+            if (code == 5) { message = "没有权限完成安装"; hint = "blocked"; return "failed"; }
+            message = VerbName(verb) + "失败（错误码 0x" + ((uint)code).ToString("X8", CultureInfo.InvariantCulture) + "）";
+            hint = "unknown";
             return "failed";
         }
 
@@ -858,11 +888,101 @@ namespace AIStation
             if (exe == null) { Finish(job, "failed", "没有找到 Ollama，请先安装 Ollama"); return; }
             if (!EnsureOllamaServer(job, exe)) { Finish(job, "failed", "Ollama 服务没有启动，请先打开 Ollama 再试"); return; }
             job.Via = "Ollama";
-            SetMessage(job, "正在下载模型 " + model + "…");
+            SetPhase(job, "download", "正在下载模型 " + model + "…");
             var code = RunProcess(job, exe, "pull " + model, null);
             job.ExitCode = code;
             if (code == 0) Finish(job, "success", "模型 " + model + " 已下载，可在 Ollama 中使用");
-            else Finish(job, "failed", "下载失败（错误码 " + code + "），请检查网络后重试");
+            else
+            {
+                lock (_jobs) job.Hint = "network";
+                Finish(job, "failed", "模型下载失败（错误码 " + code + "）");
+            }
+        }
+
+        /// <summary>LM Studio 自带的命令行工具 lms（首次打开 LM Studio 后可用）。</summary>
+        private string LmsExe()
+        {
+            var custom = Environment.GetEnvironmentVariable("AISTATION_LMS");
+            var candidates = new List<string>();
+            if (!string.IsNullOrEmpty(custom)) candidates.Add(custom);
+            candidates.Add(Path.Combine(Path.Combine(Path.Combine(Paths.UserProfile, ".lmstudio"), "bin"), "lms.exe"));
+            candidates.Add(Path.Combine(Path.Combine(Path.Combine(Paths.UserProfile, ".cache"), "lm-studio"), Path.Combine("bin", "lms.exe")));
+            InstallInfo info;
+            lock (_core.Sync) _core.Installed.TryGetValue("lmstudio", out info);
+            if (info != null && info.ExePath != null)
+            {
+                var dir = Path.GetDirectoryName(info.ExePath);
+                candidates.Add(Path.Combine(dir, Path.Combine("resources", Path.Combine("app", Path.Combine(".webpack", "lms.exe")))));
+                candidates.Add(Path.Combine(dir, Path.Combine("resources", "lms.exe")));
+            }
+            foreach (var c in candidates) if (File.Exists(c)) return c;
+            return null;
+        }
+
+        private void RunLmsGet(Job job)
+        {
+            var model = job.Arg ?? "";
+            if (!Regex.IsMatch(model, @"^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)?(@[A-Za-z0-9._-]+)?$")) { Finish(job, "failed", "模型名称不合法"); return; }
+            var lms = LmsExe();
+            if (lms == null)
+            {
+                lock (_jobs) job.Hint = "lms-missing";
+                Finish(job, "failed", "需要先打开一次 LM Studio，它会自动准备好下载工具");
+                return;
+            }
+            job.Via = "LM Studio";
+            SetPhase(job, "download", "正在通过 LM Studio 下载模型 " + model + "…");
+            var code = RunProcess(job, lms, "get " + model + " --yes", null);
+            job.ExitCode = code;
+            if (code == 0) Finish(job, "success", "模型已下载，打开 LM Studio 即可选择它开始对话");
+            else
+            {
+                lock (_jobs) job.Hint = "lms-failed";
+                Finish(job, "failed", "下载没有完成（错误码 " + code + "）");
+            }
+        }
+
+        /// <summary>列出 Ollama 中已下载的模型（ollama list 的第一列）。</summary>
+        public Dictionary<string, object> LocalModels()
+        {
+            var d = new Dictionary<string, object>();
+            var exe = OllamaExe();
+            d["ollamaReady"] = exe != null;
+            var names = new List<object>();
+            if (exe != null && (OllamaServerUp() || TryStartOllama(exe)))
+            {
+                try
+                {
+                    var psi = new ProcessStartInfo(exe, "list")
+                    {
+                        UseShellExecute = false, CreateNoWindow = true,
+                        RedirectStandardOutput = true, RedirectStandardError = true,
+                        StandardOutputEncoding = Encoding.UTF8
+                    };
+                    using (var p = Process.Start(psi))
+                    {
+                        var output = p.StandardOutput.ReadToEnd();
+                        p.WaitForExit(15000);
+                        var lines = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                        for (int i = 1; i < lines.Length; i++)
+                        {
+                            var name = lines[i].Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                            if (name.Length > 0) names.Add(name[0]);
+                        }
+                    }
+                }
+                catch (Exception ex) { Log.Write("读取 Ollama 模型列表失败: {0}", ex.Message); }
+            }
+            d["ollama"] = names;
+            return d;
+        }
+
+        private bool TryStartOllama(string exe)
+        {
+            try { Process.Start(new ProcessStartInfo(exe, "serve") { UseShellExecute = false, CreateNoWindow = true }); }
+            catch (Exception) { return false; }
+            for (int i = 0; i < 20; i++) { Thread.Sleep(500); if (OllamaServerUp()) return true; }
+            return false;
         }
 
         private void RunImportModel(Job job)

@@ -8,6 +8,6 @@ res=()
 for f in ui/* ui/icons/*; do [ -f "$f" ] && res+=("-resource:$f,$f"); done
 mcs -nologo -langversion:5 -target:winexe -optimize+ -platform:anycpu -sdk:4.5 \
   -win32icon:assets/app.ico -out:dist/AIStation.exe \
-  -r:System.Web.Extensions.dll -r:System.Windows.Forms.dll -r:System.Drawing.dll \
+  -r:System.Web.Extensions.dll -r:System.Windows.Forms.dll -r:System.Drawing.dll -r:System.IO.Compression.dll \
   "${res[@]}" src/*.cs
 echo "Built dist/AIStation.exe"

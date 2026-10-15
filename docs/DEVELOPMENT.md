@@ -59,8 +59,11 @@ build.sh            Mono 编译（开发调试用）
 | `--ui-dir 路径` | 从磁盘读取界面文件而不是嵌入资源（改界面时免重新编译） |
 | `--data-dir 路径` | 指定数据目录（默认 `%LOCALAPPDATA%\AIStation`） |
 | `--selftest 文件` | 在本机检测各项能力，把结果写成 JSON 后退出 |
+| `--install-self` | 安装到本机（复制程序、快捷方式、登记到系统应用列表）后退出 |
+| `--uninstall-self [--quiet]` | 从本机卸载 AI Station 本身 |
+| `--wait-pid N` | 等进程 N 退出后再启动（安装到本机后接管用） |
 
-环境变量 `AISTATION_WINGET` 可替换 winget 可执行文件（测试用），`AISTATION_OLLAMA` 可指定 ollama.exe。
+测试用环境变量：`AISTATION_WINGET`（替换 winget）、`AISTATION_OLLAMA`（指定 ollama.exe）、`AISTATION_LMS`（指定 lms.exe）、`AISTATION_NETWORK`（固定网络探测结果：cn / global / offline）。
 
 ## 4. 接口
 
@@ -108,6 +111,16 @@ build.sh            Mono 编译（开发调试用）
 **软件图标**：`tools/fetch_icons.py` 从官网读取 `iconUrl`（目录中可选）、网页声明的 SVG / apple-touch-icon / icon 链接和 `favicon.ico`，选矢量或分辨率最高者，去掉透明留白后统一为 128px PNG，写入 `ui/icons/<id>.png` 和 `ui/icons/index.json`（`full` 表示自带底色的满版图标）。`.github/workflows/icons.yml` 在目录或脚本变化时自动运行并提交结果。图标显示优先级：内置官方图标 → 已安装软件的程序图标 → 文字头像。
 
 **使用须知**：首次打开界面时弹出（`profile.disclaimerAccepted` 记录是否已同意），文字在 `ui/app.js` 的 `DISCLAIMER` 常量中，设置页显示全文。
+
+**安装到本机**（`SelfInstall.cs`）：复制到 `%LOCALAPPDATA%\Programs\AIStation\AIStation.exe`，用 `WScript.Shell` 创建桌面和开始菜单快捷方式，在 `HKCU\...\Uninstall\AIStation` 登记（`UninstallString` 为 `--uninstall-self`）。从界面安装后，新位置的程序以 `--wait-pid` 启动、等旧进程退出后接管。命令行 `--install-self` / `--uninstall-self [--quiet]` 供 CI 和系统“应用”列表使用。离线包（程序旁有 apps/ 或 models/）不提示安装到本机，因为离线资源在 U 盘上。
+
+**安装前检查与失败自助**：`ui/app.js` 的 `preCheck()` 在安装前汇总阻止项（Windows 版本过旧、没联网、CPU 不支持 AVX2）和提醒（无 winget、海外服务不可达、内存小、磁盘少、需海外账号 / API Key）。后端在下载前检查系统盘空间（至少 1GB 且不少于安装包 3 倍）。任务失败时带 `hint`（disk / network / uac / blocked / hash / unsupported / reboot / nowinget / running / lms-missing / unknown），界面按 `HINTS` 显示对应说明和操作按钮。
+
+**问题报告**（`Diagnostics.cs`）：zip 内含 `report.json`（状态快照，不含目录）、`aistation.log`、`winget --info` 输出和说明文件，保存到桌面并在资源管理器中选中。
+
+**本地模型**：“一键准备”= 依次排队 `install ollama` 和 `pull-model`；`/api/local-models` 运行 `ollama list` 返回已有模型，界面据此显示“下载”或“开始对话”（打开 Ollama 自带的聊天窗口）。LM Studio 通过其命令行 `lms get <模型> --yes` 下载（需要先打开过一次 LM Studio），CI 中的 `tests/probe-lmstudio.ps1` 用于核实其位置和参数。
+
+**费用与账号**：`catalog.json` 中每款软件有 `pricing`（free / freemium / paid）、`account`（phone / overseas / microsoft / optional / none / apikey）和 `pricingNote`，标签文字在 `pricing` / `accounts` 字典中。
 
 ## 6. 维护注意事项
 

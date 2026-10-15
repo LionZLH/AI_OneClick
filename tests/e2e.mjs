@@ -35,6 +35,9 @@ const env = { ...process.env };
 let sizeServer = null;
 if (!REAL) {
   env.AISTATION_WINGET = path.join(repo, 'tests', 'fake-winget.sh');
+  env.AISTATION_OLLAMA = path.join(repo, 'tests', 'fake-ollama.sh');
+  env.AISTATION_NETWORK = 'cn';
+  env.TMPDIR = mkdtempSync(path.join(tmpdir(), 'aistation-tmp-'));
   env.FAKE_WINGET_FAIL = 'kangfenmao.CherryStudio';
   // 模拟安装包所在的 CDN：只需要正确返回文件大小
   const http = await import('node:http');
@@ -78,6 +81,11 @@ async function waitServer() {
   throw new Error('服务没有启动：\n' + serverLog);
 }
 
+function cleanupFakeOllama() {
+  if (REAL || isWin) return;
+  try { require('node:child_process').execSync('pkill -f "http.server 11434"'); } catch { /* 没有在运行 */ }
+}
+
 async function main() {
   await waitServer();
 
@@ -116,7 +124,7 @@ async function main() {
   await page.getByText('这台电脑的网络环境是？').waitFor();
   await page.waitForFunction(() => window.__aistation.state.network);
   await shot(page, 'quiz-network');
-  await page.getByRole('button', { name: /^国内网络/ }).click();
+  await page.locator('.opt', { hasText: '国内网络' }).click();
   await page.getByText('你更看重什么？').waitFor();
   await shot(page, 'quiz-priority');
   await page.getByRole('button', { name: /简单省心/ }).click();
@@ -171,12 +179,21 @@ async function main() {
   await page.locator('.card', { hasText: 'Cherry Studio' }).locator('.check').click();
   await page.locator('.card', { hasText: '秘塔' }).locator('.check').click();
   check(await page.getByText('已选 2 款').count() === 1, '批量选择计数');
+  check(await page.locator('.card', { hasText: '豆包' }).getByText('免费 · 手机号登录').count() === 1, '软件卡片标注费用和账号要求');
   await shot(page, 'library-selected');
   if (!REAL) {
     await page.getByRole('button', { name: /安装选中的 2 款/ }).click();
+    await page.getByRole('dialog', { name: '安装前请留意' }).waitFor();
+    check(await page.getByText('需要自备模型服务的 API Key').count() === 1, '安装前提醒（Cherry Studio 需要 API Key）');
+    await shot(page, 'precheck');
+    await page.getByRole('button', { name: '知道了，继续安装' }).click();
     await page.getByRole('heading', { name: '下载与更新' }).waitFor();
     await page.waitForFunction(() => window.__aistation.state.jobs.some((j) => j.appId === 'cherry' && j.status === 'failed'), null, { timeout: 60000 });
     check(await page.locator('.job.failed').getByRole('button', { name: /重试/ }).count() === 1, '失败任务提供重试');
+    check(await page.locator('.job.failed .help').count() === 1, '失败任务显示自助说明');
+    await page.locator('.job.failed').getByRole('button', { name: /导出问题报告/ }).click();
+    await page.getByText(/已保存到桌面：AIStation-问题报告-/).waitFor();
+    check(true, '一键导出问题报告');
     await page.locator('.job.failed summary').click();
     await shot(page, 'tasks-failed');
     await page.getByRole('button', { name: /我的 AI/ }).click();
@@ -186,6 +203,18 @@ async function main() {
   await page.getByRole('button', { name: /本地模型/ }).click();
   await page.getByText('这台电脑推荐').waitFor();
   await shot(page, 'models');
+  if (!REAL) {
+    await page.getByRole('button', { name: /一键准备：安装 Ollama \+ 下载/ }).click();
+    await page.waitForFunction(() => {
+      const js = window.__aistation.state.jobs.filter((j) => j.appId === 'ollama');
+      return js.length === 2 && js.every((j) => j.status === 'success');
+    }, null, { timeout: 60000 });
+    check(true, '一键准备本地 AI：安装 Ollama 并下载推荐模型');
+    await page.getByRole('button', { name: /本地模型/ }).click();
+    await page.getByRole('button', { name: /开始对话/ }).waitFor({ timeout: 15000 });
+    check(true, '模型下载后显示“开始对话”');
+    await shot(page, 'models-ready');
+  }
   await page.getByRole('button', { name: /设置/ }).click();
   await page.getByText('这台电脑', { exact: true }).waitFor();
   await shot(page, 'settings');
@@ -228,8 +257,10 @@ main().then(() => {
   console.log(`\nE2E 通过，截图：${out}`);
   server.kill();
   if (sizeServer) sizeServer.close();
+  cleanupFakeOllama();
   process.exit(0);
 }).catch((e) => {
+  cleanupFakeOllama();
   console.log(results.join('\n'));
   console.error('\nE2E 失败：', e.message);
   console.error('--- 服务日志 ---\n' + serverLog.slice(-4000));

@@ -64,10 +64,10 @@
   /** 根据内存/显存给出本地模型建议（Qwen3 系列，Q4 量化）。 */
   function modelAdvice(hw) {
     var tiers = [
-      { key: '1.7b', label: 'Qwen3 1.7B', ollama: 'qwen3:1.7b', sizeGB: 1.4, lmSearch: 'qwen3 1.7b', level: '入门' },
-      { key: '4b', label: 'Qwen3 4B', ollama: 'qwen3:4b', sizeGB: 2.5, lmSearch: 'qwen3 4b', level: '基础' },
-      { key: '8b', label: 'Qwen3 8B', ollama: 'qwen3:8b', sizeGB: 5.2, lmSearch: 'qwen3 8b', level: '标准' },
-      { key: '14b', label: 'Qwen3 14B', ollama: 'qwen3:14b', sizeGB: 9.3, lmSearch: 'qwen3 14b', level: '进阶' }
+      { key: '1.7b', label: 'Qwen3 1.7B', ollama: 'qwen3:1.7b', lmKey: 'qwen/qwen3-1.7b', sizeGB: 1.4, lmSearch: 'qwen3 1.7b', level: '入门' },
+      { key: '4b', label: 'Qwen3 4B', ollama: 'qwen3:4b', lmKey: 'qwen/qwen3-4b', sizeGB: 2.5, lmSearch: 'qwen3 4b', level: '基础' },
+      { key: '8b', label: 'Qwen3 8B', ollama: 'qwen3:8b', lmKey: 'qwen/qwen3-8b', sizeGB: 5.2, lmSearch: 'qwen3 8b', level: '标准' },
+      { key: '14b', label: 'Qwen3 14B', ollama: 'qwen3:14b', lmKey: 'qwen/qwen3-14b', sizeGB: 9.3, lmSearch: 'qwen3 14b', level: '进阶' }
     ];
     var ram = hw && typeof hw.ramGB === 'number' ? hw.ramGB : 0;
     var vram = 0;
@@ -98,6 +98,7 @@
       level: tier.level,
       ollama: tier.ollama,
       lmSearch: tier.lmSearch,
+      lmKey: tier.lmKey,
       sizeGB: tier.sizeGB,
       reason: reason,
       warnings: warn,
