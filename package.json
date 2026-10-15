@@ -1,0 +1,9 @@
+{
+  "name": "ai-station",
+  "private": true,
+  "description": "AI Station：Windows 上的 AI 软件启动器与管理工具",
+  "scripts": {
+    "test": "node --test tests/recommend.test.cjs tests/catalog.test.cjs",
+    "e2e": "node tests/e2e.mjs"
+  }
+}

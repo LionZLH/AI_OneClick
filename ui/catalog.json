@@ -1,0 +1,388 @@
+{
+  "version": "2026.10.15",
+  "needs": [
+    { "id": "chat",    "label": "日常问答与写作", "desc": "聊天、写文案、翻译、润色", "icon": "chat" },
+    { "id": "docs",    "label": "读文档 / 读论文", "desc": "上传 PDF、合同、报告，提炼要点", "icon": "doc" },
+    { "id": "search",  "label": "联网查资料",     "desc": "搜索最新信息，答案附带来源", "icon": "search" },
+    { "id": "office",  "label": "办公提效",       "desc": "做 PPT、处理表格、会议纪要", "icon": "briefcase" },
+    { "id": "code",    "label": "写代码",         "desc": "编程助手、AI 代码编辑器", "icon": "code" },
+    { "id": "create",  "label": "图片与视频创作", "desc": "AI 生图、剪视频、配音字幕", "icon": "image" },
+    { "id": "voice",   "label": "语音对话",       "desc": "像打电话一样聊天、练口语", "icon": "mic" },
+    { "id": "private", "label": "本地私有使用",   "desc": "数据不出电脑，可断网运行", "icon": "lock" }
+  ],
+  "regions": {
+    "cn":     { "label": "国内可用",   "desc": "国内网络可直接使用" },
+    "global": { "label": "需海外网络", "desc": "需要能够访问海外服务的网络和账号" },
+    "local":  { "label": "本地运行",   "desc": "在本机运行，准备好模型后可断网使用" }
+  },
+  "apps": [
+    {
+      "id": "doubao", "name": "豆包", "vendor": "字节跳动", "kind": "desktop", "region": "cn",
+      "letter": "豆", "color": "#3c6df0",
+      "summary": "全能型 AI 助手：聊天写作、实时语音通话、AI 生图都能做。",
+      "scores": { "chat": 3, "voice": 3, "create": 2, "search": 2, "office": 2, "docs": 2 },
+      "why": {
+        "chat": "中文对话自然，写文案、翻译、润色都顺手",
+        "voice": "支持实时语音通话，像打电话一样交流",
+        "create": "内置 AI 生图和图片编辑",
+        "search": "可联网搜索最新信息",
+        "office": "能帮写周报、总结会议记录",
+        "docs": "支持上传文档后提问"
+      },
+      "notes": ["需要登录账号（手机号即可）"],
+      "homepage": "https://www.doubao.com/download",
+      "install": { "source": "winget", "id": "ByteDance.Doubao" },
+      "detect": { "displayName": "^(豆包|Doubao)", "exe": ["Doubao.exe"] },
+      "offline": { "match": ["doubao"], "installerType": "exe" }
+    },
+    {
+      "id": "kimi", "name": "Kimi", "vendor": "月之暗面", "kind": "desktop", "region": "cn",
+      "letter": "K", "color": "#1f2329",
+      "summary": "擅长超长文档阅读和深度搜索，适合学习与研究。",
+      "scores": { "docs": 3, "search": 3, "chat": 2, "office": 2, "code": 1 },
+      "why": {
+        "docs": "一次读完上百页 PDF、论文、合同并提炼要点",
+        "search": "深度搜索会查阅大量网页并给出来源",
+        "chat": "推理和写作能力强",
+        "office": "可以根据内容生成 PPT"
+      },
+      "notes": ["需要登录账号"],
+      "homepage": "https://www.kimi.com",
+      "install": { "source": "winget", "id": "MoonshotAI.Kimi" },
+      "detect": { "displayName": "^Kimi", "exe": ["Kimi.exe"] },
+      "offline": { "match": ["kimi"], "installerType": "nullsoft" }
+    },
+    {
+      "id": "yuanbao", "name": "腾讯元宝", "vendor": "腾讯", "kind": "desktop", "region": "cn",
+      "letter": "元", "color": "#14a35f",
+      "summary": "联网搜索可直接检索微信公众号文章，中文资料覆盖广。",
+      "scores": { "search": 3, "chat": 2, "docs": 2 },
+      "why": {
+        "search": "能搜微信公众号等腾讯生态内容，中文资料更全",
+        "chat": "可切换混元、DeepSeek 等模型",
+        "docs": "支持上传文件解读"
+      },
+      "notes": ["需要登录账号", "安装时可能弹出管理员权限确认"],
+      "homepage": "https://yuanbao.tencent.com/download",
+      "install": { "source": "winget", "id": "Tencent.Yuanbao" },
+      "detect": { "displayName": "^(腾讯元宝|元宝|Tencent Yuanbao|Yuanbao)", "exe": ["Yuanbao.exe", "yuanbao.exe"] },
+      "offline": { "match": ["yuanbao"], "installerType": "nullsoft" }
+    },
+    {
+      "id": "qianwen", "name": "千问", "vendor": "阿里巴巴", "kind": "desktop", "region": "cn",
+      "letter": "千", "color": "#615ced",
+      "summary": "阿里通义千问客户端：对话、录音转写、文档处理一站式。",
+      "scores": { "office": 2, "docs": 2, "chat": 2, "voice": 2 },
+      "why": {
+        "office": "录音实时转文字、整理会议纪要，还能生成 PPT",
+        "docs": "支持长文档和多文件解读",
+        "chat": "中文问答和写作能力扎实",
+        "voice": "支持语音对话"
+      },
+      "notes": ["需要登录账号"],
+      "homepage": "https://www.qianwen.com",
+      "install": { "source": "winget", "id": "Alibaba.Qianwen" },
+      "detect": { "displayName": "^(千问|通义|Qianwen|Tongyi)", "exe": ["Qianwen.exe", "Tongyi.exe", "qwenclient.exe"] },
+      "offline": { "match": ["qwenclient", "qianwen"], "installerType": "nullsoft" }
+    },
+    {
+      "id": "chatglm", "name": "智谱清言", "vendor": "智谱 AI", "kind": "desktop", "region": "cn",
+      "letter": "智", "color": "#2f5bea",
+      "summary": "基于 GLM 大模型，内置大量现成的智能体。",
+      "scores": { "chat": 2, "docs": 2, "code": 1 },
+      "why": {
+        "chat": "中文能力扎实，有大量现成智能体可直接用",
+        "docs": "可以上传文件进行总结和问答"
+      },
+      "notes": ["需要登录账号"],
+      "homepage": "https://chatglm.cn",
+      "install": { "source": "winget", "id": "ZhipuAI.ChatGLM" },
+      "detect": { "displayName": "^(智谱清言|ChatGLM)", "exe": ["智谱清言.exe", "ChatGLM.exe"] },
+      "offline": { "match": ["chatglm"], "installerType": "nullsoft" }
+    },
+    {
+      "id": "deepseek", "name": "DeepSeek", "vendor": "深度求索", "kind": "web", "region": "cn",
+      "letter": "D", "color": "#4d6bfe",
+      "summary": "以推理见长的国产大模型，网页版打开即用。",
+      "scores": { "chat": 3, "code": 2 },
+      "why": {
+        "chat": "深度思考模式擅长数学、逻辑和复杂问题",
+        "code": "代码生成和调试能力强"
+      },
+      "notes": ["网页版，添加后从这里一键打开", "网上的“DeepSeek 桌面版”多为第三方打包，请注意甄别"],
+      "homepage": "https://www.deepseek.com",
+      "webUrl": "https://chat.deepseek.com",
+      "install": { "source": "web" },
+      "detect": {}
+    },
+    {
+      "id": "trae", "name": "TRAE 国内版", "vendor": "字节跳动", "kind": "desktop", "region": "cn",
+      "letter": "T", "color": "#0f9d74",
+      "summary": "AI 编程 IDE，用中文描述需求就能写代码、改 bug。",
+      "scores": { "code": 3 },
+      "why": { "code": "用自然语言让 AI 写代码、改 bug、搭项目，界面中文" },
+      "notes": ["基于 VS Code，适合有一点编程基础的用户", "需要登录账号"],
+      "homepage": "https://www.trae.cn",
+      "install": { "source": "winget", "id": "ByteDance.Trae.CN" },
+      "detect": { "displayName": "^Trae CN", "exe": ["Trae CN.exe"] },
+      "offline": { "match": ["trae_cn", "trae-cn", "traecn"], "installerType": "inno" }
+    },
+    {
+      "id": "wps", "name": "WPS Office", "vendor": "金山办公", "kind": "desktop", "region": "cn",
+      "letter": "W", "color": "#d6382f",
+      "summary": "国产办公套件，内置 WPS AI：写文档、做 PPT、处理表格。",
+      "scores": { "office": 3, "docs": 2 },
+      "why": {
+        "office": "WPS AI 能生成 PPT、起草文档、帮写表格公式",
+        "docs": "可以对 PDF 和文档做 AI 总结"
+      },
+      "notes": ["部分 AI 功能需要登录或会员", "体积较大，安装需要几分钟"],
+      "homepage": "https://www.wps.cn",
+      "install": { "source": "winget", "id": "Kingsoft.WPSOffice.CN" },
+      "detect": { "displayName": "^WPS Office", "exe": ["wps.exe", "ksolaunch.exe"] },
+      "offline": { "match": ["wps_setup", "wps"], "installerType": "nullsoft" }
+    },
+    {
+      "id": "jianying", "name": "剪映专业版", "vendor": "字节跳动", "kind": "desktop", "region": "cn",
+      "letter": "剪", "color": "#111111",
+      "summary": "视频剪辑软件，带 AI 字幕、文字成片、AI 配音。",
+      "scores": { "create": 3 },
+      "why": { "create": "智能字幕、文字成片、AI 配音，做短视频很快" },
+      "notes": ["部分 AI 功能需要会员"],
+      "homepage": "https://www.capcut.cn",
+      "install": { "source": "winget", "id": "ByteDance.JianyingPro" },
+      "detect": { "displayName": "^(剪映|JianyingPro)", "exe": ["JianyingPro.exe"] },
+      "offline": { "match": ["jianying"], "installerType": "exe" }
+    },
+    {
+      "id": "jimeng", "name": "即梦 AI", "vendor": "字节跳动", "kind": "web", "region": "cn",
+      "letter": "即", "color": "#7b5cff",
+      "summary": "AI 绘画与视频生成平台，输入文字就能出图出片。",
+      "scores": { "create": 3 },
+      "why": { "create": "输入一句话就能生成图片和短视频" },
+      "notes": ["网页版", "生成次数有每日额度"],
+      "homepage": "https://jimeng.jianying.com",
+      "webUrl": "https://jimeng.jianying.com",
+      "install": { "source": "web" },
+      "detect": {}
+    },
+    {
+      "id": "metaso", "name": "秘塔 AI 搜索", "vendor": "秘塔科技", "kind": "web", "region": "cn",
+      "letter": "秘", "color": "#2463eb",
+      "summary": "没有广告的 AI 搜索引擎，回答附带参考来源。",
+      "scores": { "search": 3 },
+      "why": { "search": "直接给出整理好的答案和来源链接，适合查资料、做研究" },
+      "notes": ["网页版"],
+      "homepage": "https://metaso.cn",
+      "webUrl": "https://metaso.cn",
+      "install": { "source": "web" },
+      "detect": {}
+    },
+    {
+      "id": "chatgpt", "name": "ChatGPT", "vendor": "OpenAI", "kind": "desktop", "region": "global",
+      "letter": "G", "color": "#10a37f",
+      "summary": "OpenAI 官方客户端，综合能力全面。",
+      "scores": { "chat": 3, "voice": 3, "create": 3, "docs": 2, "search": 2, "code": 2, "office": 2 },
+      "why": {
+        "chat": "综合能力强，生态最完整",
+        "voice": "高级语音模式对话自然",
+        "create": "可以生成和编辑图片",
+        "docs": "可上传文件分析",
+        "search": "可联网搜索",
+        "code": "能写代码和解释代码",
+        "office": "能处理表格数据、生成文档"
+      },
+      "notes": ["需要能访问 OpenAI 服务的网络和账号", "通过 Microsoft Store 安装"],
+      "homepage": "https://chatgpt.com/download",
+      "install": { "source": "msstore", "id": "9NT1R1C2HH7J" },
+      "detect": { "displayName": "^ChatGPT", "pfn": "OpenAI.ChatGPT-Desktop_2p2nqsd0c76g0" },
+      "offline": null
+    },
+    {
+      "id": "claude", "name": "Claude", "vendor": "Anthropic", "kind": "desktop", "region": "global",
+      "letter": "C", "color": "#d97757",
+      "summary": "长文写作、文档分析和编程见长的官方客户端。",
+      "scores": { "chat": 3, "docs": 3, "code": 3, "office": 2 },
+      "why": {
+        "chat": "文风自然克制，擅长长文写作",
+        "docs": "能处理很长的文档和多份资料",
+        "code": "编程能力出色，适合复杂代码任务",
+        "office": "能直接生成文档、表格等文件"
+      },
+      "notes": ["需要能访问 Anthropic 服务的网络和账号"],
+      "homepage": "https://claude.com/download",
+      "install": { "source": "winget", "id": "Anthropic.Claude" },
+      "detect": { "displayName": "^Claude$", "exe": ["claude.exe", "Claude.exe"], "pfn": "Claude_pzs8sxrjxfjjc" },
+      "offline": { "match": ["claude"], "installerType": "exe" }
+    },
+    {
+      "id": "gemini", "name": "Gemini", "vendor": "Google", "kind": "desktop", "region": "global",
+      "letter": "G", "color": "#4285f4",
+      "summary": "Google 官方桌面版，超长上下文、多模态，结合 Google 搜索。",
+      "scores": { "chat": 3, "search": 3, "docs": 3, "create": 2, "voice": 2 },
+      "why": {
+        "chat": "多模态能力强，可配合全局快捷键随时调用",
+        "search": "结合 Google 搜索，信息新、覆盖广",
+        "docs": "超长上下文，长文档也能整篇读",
+        "create": "可以生成图片",
+        "voice": "支持语音对话"
+      },
+      "notes": ["需要能访问 Google 服务的网络和账号"],
+      "homepage": "https://gemini.google/desktop/",
+      "install": { "source": "winget", "id": "Google.GeminiDesktop" },
+      "detect": { "displayName": "^Gemini$", "exe": ["Gemini.exe"] },
+      "offline": { "match": ["geminisetup"], "installerType": "nullsoft" }
+    },
+    {
+      "id": "copilot", "name": "Microsoft Copilot", "vendor": "微软", "kind": "desktop", "region": "global",
+      "letter": "M", "color": "#0a7cd7",
+      "summary": "微软出品的免费 AI 助手，结合必应搜索。",
+      "scores": { "chat": 2, "search": 2, "voice": 2, "create": 2 },
+      "why": {
+        "chat": "免费使用，日常问答够用",
+        "search": "结合必应搜索",
+        "voice": "支持语音对话",
+        "create": "可以生成图片"
+      },
+      "notes": ["中国大陆地区通常无法使用", "通过 Microsoft Store 安装，部分 Windows 11 已预装"],
+      "homepage": "https://copilot.microsoft.com",
+      "install": { "source": "msstore", "id": "9NHT9RB2F4HD" },
+      "detect": { "displayName": "^(Microsoft )?Copilot$", "pfn": "Microsoft.Copilot_8wekyb3d8bbwe" },
+      "offline": null
+    },
+    {
+      "id": "perplexity", "name": "Perplexity", "vendor": "Perplexity AI", "kind": "web", "region": "global",
+      "letter": "P", "color": "#20808d",
+      "summary": "研究型 AI 搜索引擎，每个结论都标注来源。",
+      "scores": { "search": 3 },
+      "why": { "search": "答案逐句标注来源，适合严肃的资料调研" },
+      "notes": ["网页版", "需要能访问海外服务的网络"],
+      "homepage": "https://www.perplexity.ai",
+      "webUrl": "https://www.perplexity.ai",
+      "install": { "source": "web" },
+      "detect": {}
+    },
+    {
+      "id": "cursor", "name": "Cursor", "vendor": "Anysphere", "kind": "desktop", "region": "global",
+      "letter": "C", "color": "#202020",
+      "summary": "主流的 AI 代码编辑器，兼容 VS Code 插件和习惯。",
+      "scores": { "code": 3 },
+      "why": { "code": "AI 补全和智能体模式成熟，能理解整个项目" },
+      "notes": ["需要海外网络和账号", "免费额度有限，重度使用需付费"],
+      "homepage": "https://cursor.com/download",
+      "install": { "source": "winget", "id": "Anysphere.Cursor" },
+      "detect": { "displayName": "^Cursor", "exe": ["Cursor.exe"] },
+      "offline": { "match": ["cursorusersetup", "cursorsetup"], "installerType": "inno" }
+    },
+    {
+      "id": "antigravity", "name": "Antigravity", "vendor": "Google", "kind": "desktop", "region": "global",
+      "letter": "A", "color": "#1a73e8",
+      "summary": "Google 的智能体编程平台，让 AI 自主完成开发任务。",
+      "scores": { "code": 3 },
+      "why": { "code": "可以把整块开发任务交给 AI 智能体执行" },
+      "notes": ["需要海外网络和 Google 账号"],
+      "homepage": "https://antigravity.google",
+      "install": { "source": "winget", "id": "Google.Antigravity" },
+      "detect": { "displayName": "^Antigravity", "exe": ["Antigravity.exe"] },
+      "offline": { "match": ["antigravity"], "installerType": "nullsoft" }
+    },
+    {
+      "id": "lmstudio", "name": "LM Studio", "vendor": "Element Labs", "kind": "desktop", "region": "local",
+      "letter": "LM", "color": "#5a3fd8",
+      "summary": "在本机运行开源大模型的图形化工具，下载模型后可断网使用。",
+      "scores": { "private": 3, "chat": 2, "docs": 2, "code": 1 },
+      "why": {
+        "private": "模型跑在你自己的电脑上，对话内容不上传",
+        "chat": "界面友好，可以一键下载和切换各种开源模型",
+        "docs": "可以把文档拖进对话提问"
+      },
+      "notes": ["首次使用需要下载模型，或从离线包导入", "需要 CPU 支持 AVX2，建议 16GB 以上内存"],
+      "homepage": "https://lmstudio.ai",
+      "install": { "source": "winget", "id": "ElementLabs.LMStudio" },
+      "detect": { "displayName": "^LM Studio", "exe": ["LM Studio.exe"] },
+      "requires": { "ramGB": 8, "avx2": true },
+      "offline": { "match": ["lm-studio", "lmstudio", "lm studio"], "installerType": "nullsoft" }
+    },
+    {
+      "id": "ollama", "name": "Ollama", "vendor": "Ollama", "kind": "desktop", "region": "local",
+      "letter": "O", "color": "#3a3a3a", "advanced": true,
+      "summary": "流行的本地模型运行引擎，自带简洁的聊天窗口。",
+      "scores": { "private": 2, "chat": 2 },
+      "why": {
+        "private": "模型在本机运行，可以完全离线",
+        "chat": "自带聊天窗口，也能给其他客户端提供本地模型"
+      },
+      "notes": ["本工具可以直接帮你通过 Ollama 下载推荐模型"],
+      "homepage": "https://ollama.com",
+      "install": { "source": "winget", "id": "Ollama.Ollama" },
+      "detect": { "displayName": "^Ollama", "exe": ["ollama app.exe", "ollama.exe"], "paths": ["%LOCALAPPDATA%\\Programs\\Ollama\\ollama app.exe"] },
+      "requires": { "ramGB": 8, "avx2": false },
+      "offline": { "match": ["ollamasetup", "ollama"], "installerType": "inno" }
+    },
+    {
+      "id": "gpt4all", "name": "GPT4All", "vendor": "Nomic", "kind": "desktop", "region": "local",
+      "letter": "4", "color": "#2c7a7b",
+      "summary": "对没有独立显卡的普通电脑友好的本地 AI 客户端，带本地知识库。",
+      "scores": { "private": 3, "chat": 2, "docs": 2 },
+      "why": {
+        "private": "LocalDocs 可以把本地文件夹变成私有知识库",
+        "chat": "纯 CPU 也能运行，老电脑也能用",
+        "docs": "基于你自己的文档回答问题"
+      },
+      "notes": ["首次使用需要在软件内下载模型"],
+      "homepage": "https://www.nomic.ai/gpt4all",
+      "install": { "source": "winget", "id": "nomic.gpt4all" },
+      "detect": { "displayName": "^GPT4All", "exe": ["chat.exe"], "paths": ["%USERPROFILE%\\gpt4all\\bin\\chat.exe", "%ProgramFiles%\\gpt4all\\bin\\chat.exe"] },
+      "requires": { "ramGB": 8, "avx2": false },
+      "offline": { "match": ["gpt4all"], "installerType": "exe" }
+    },
+    {
+      "id": "jan", "name": "Jan", "vendor": "Jan", "kind": "desktop", "region": "local",
+      "letter": "J", "color": "#1d4ed8",
+      "summary": "开源、注重隐私的本地 AI 客户端，界面简洁。",
+      "scores": { "private": 2, "chat": 2 },
+      "why": {
+        "private": "开源，数据保存在本地",
+        "chat": "界面简洁，可在软件内下载模型"
+      },
+      "notes": ["首次使用需要在软件内下载模型"],
+      "homepage": "https://jan.ai",
+      "install": { "source": "winget", "id": "Jan.Jan" },
+      "detect": { "displayName": "^Jan( |$)", "exe": ["Jan.exe"] },
+      "requires": { "ramGB": 8, "avx2": false },
+      "offline": { "match": ["jan_", "jan-setup", "jan-"], "installerType": "nullsoft" }
+    },
+    {
+      "id": "anythingllm", "name": "AnythingLLM", "vendor": "Mintplex Labs", "kind": "desktop", "region": "local",
+      "letter": "A", "color": "#0e7490", "advanced": true,
+      "summary": "私有知识库工具：导入文档，让 AI 基于你的资料回答问题。",
+      "scores": { "private": 3, "docs": 3 },
+      "why": {
+        "private": "文档、向量库都保存在本机",
+        "docs": "批量导入文档后可以跨文件提问"
+      },
+      "notes": ["暂未收录于 winget，需要从官网下载安装", "需要配合本地模型（如 Ollama）或在线 API 使用"],
+      "homepage": "https://anythingllm.com/desktop",
+      "install": { "source": "manual" },
+      "detect": { "displayName": "^AnythingLLM", "exe": ["AnythingLLM.exe"] },
+      "requires": { "ramGB": 8, "avx2": false },
+      "offline": { "match": ["anythingllm"], "installerType": "nullsoft" }
+    },
+    {
+      "id": "cherry", "name": "Cherry Studio", "vendor": "CherryHQ", "kind": "desktop", "region": "cn",
+      "letter": "C", "color": "#e5484d", "advanced": true,
+      "summary": "多合一 AI 客户端，一个界面接入几十种模型服务，带知识库。",
+      "scores": { "chat": 2, "docs": 2, "private": 2 },
+      "why": {
+        "chat": "国内外模型都能接，方便对比",
+        "docs": "内置知识库，可以导入文档",
+        "private": "可以连接本机的 Ollama / LM Studio 模型"
+      },
+      "notes": ["需要自备模型服务的 API Key，或连接本地模型"],
+      "homepage": "https://cherry-ai.com",
+      "install": { "source": "winget", "id": "kangfenmao.CherryStudio" },
+      "detect": { "displayName": "^Cherry Studio", "exe": ["Cherry Studio.exe"] },
+      "offline": { "match": ["cherry-studio", "cherrystudio"], "installerType": "nullsoft" }
+    }
+  ]
+}
