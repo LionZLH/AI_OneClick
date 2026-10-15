@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     AI装机助手 · 离线安装器 (Windows)
@@ -25,6 +25,7 @@
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Continue'   # 捕获错误但继续执行
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 # ─────────────────────────────────────────────
 # 常量定义

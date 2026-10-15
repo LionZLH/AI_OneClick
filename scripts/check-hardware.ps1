@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     AI装机助手 - 硬件检测工具 (Windows)
@@ -12,6 +12,7 @@
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 # ─────────────────────────────────────────────
 # 常量定义
@@ -186,7 +187,7 @@ $failReasons = @()
 
 # 64位检查
 $pass64 = $is64Bit
-Write-CheckRow "64位系统" (if($is64Bit){"✓ 64位"}else{"✗ 32位"}) $pass64 "必须为64位操作系统"
+Write-CheckRow "64位系统" $(if($is64Bit){"64位"}else{"32位"}) $pass64 "必须为64位操作系统"
 if (-not $pass64) {
     $checkFailed = $true
     $failReasons += "❌ 操作系统必须为64位（当前为32位）"
@@ -194,7 +195,7 @@ if (-not $pass64) {
 
 # AVX2 检查
 $passAvx2 = $hasAvx2
-Write-CheckRow "AVX2 指令集" (if($hasAvx2){"支持"}else{"不支持"}) $passAvx2 "现代AI推理必需"
+Write-CheckRow "AVX2 指令集" $(if($hasAvx2){"支持"}else{"不支持"}) $passAvx2 "现代AI推理必需"
 if (-not $passAvx2) {
     $checkFailed = $true
     $failReasons += "❌ CPU 不支持 AVX2 指令集（2013年之前的老CPU不支持）"
