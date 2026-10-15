@@ -32,9 +32,18 @@ const cmd = isWin ? exe : 'mono';
 const cmdArgs = [...(isWin ? [] : [exe]), '--headless', '--port', String(port), '--data-dir', dataDir, '--token', token];
 if (!isWin) cmdArgs.push('--ui-dir', path.join(repo, 'ui'));
 const env = { ...process.env };
+let sizeServer = null;
 if (!REAL) {
   env.AISTATION_WINGET = path.join(repo, 'tests', 'fake-winget.sh');
   env.FAKE_WINGET_FAIL = 'kangfenmao.CherryStudio';
+  // 模拟安装包所在的 CDN：只需要正确返回文件大小
+  const http = await import('node:http');
+  sizeServer = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Length': String(40 * 1024 * 1024), 'Content-Type': 'application/octet-stream' });
+    res.end();
+  });
+  await new Promise((r) => sizeServer.listen(port + 1, '127.0.0.1', r));
+  env.FAKE_INSTALLER_BASE = `http://127.0.0.1:${port + 1}`;
 }
 const server = spawn(cmd, cmdArgs, { env, stdio: ['ignore', 'pipe', 'pipe'] });
 let serverLog = '';
@@ -87,6 +96,10 @@ async function main() {
   page.on('pageerror', (e) => errors.push(e.message));
 
   await page.goto(`${base}/?t=${token}`);
+  await page.getByRole('dialog', { name: '使用须知' }).waitFor();
+  check(await page.getByText('不提供、不内置、也不推荐任何代理').count() === 1, '首次打开显示使用须知（网络免责）');
+  await shot(page, 'disclaimer');
+  await page.getByRole('button', { name: '同意并继续' }).click();
   await page.getByText('把合适的 AI 装进你的电脑').waitFor();
   await page.waitForFunction(() => window.__aistation.state.hardware);
   check(!page.url().includes('t='), '令牌从地址栏移除');
@@ -119,8 +132,11 @@ async function main() {
   await page.getByRole('heading', { name: '下载与更新' }).waitFor();
   await page.waitForSelector('.job.running');
   // 真实 winget 的输出被重定向时不打印进度条，界面显示“进行中”动画；模拟 winget 会输出下载进度
-  if (!REAL) await page.waitForFunction(() => window.__aistation.state.jobs.some((j) => j.status === 'running' && j.progress > 0));
-  await shot(page, 'tasks-running');
+  // 下载进度来自对 winget 下载文件的实际测量（真实与模拟环境都应能看到）
+  await page.waitForFunction(() => window.__aistation.state.jobs.some((j) => j.status === 'running' && j.phase === 'download' && j.downloaded > 0), null, { timeout: REAL ? 120000 : 30000 });
+  await page.waitForFunction(() => window.__aistation.state.jobs.some((j) => j.phase === 'download' && j.progress > 5 && j.total > 0), null, { timeout: REAL ? 120000 : 30000 });
+  check(true, '显示真实下载进度（已下载 / 总大小）');
+  await shot(page, 'tasks-downloading');
   // 真实 winget 下载安装可能需要几分钟
   await page.waitForFunction(() => window.__aistation.state.jobs.length === 2 &&
     window.__aistation.state.jobs.every((j) => j.status !== 'queued' && j.status !== 'running'), null, { timeout: REAL ? 15 * 60000 : 60000 });
@@ -182,10 +198,26 @@ async function main() {
   await page.getByRole('button', { name: /软件库/ }).click();
   await shot(page, 'library-narrow-dark');
 
-  // 重新加载后保持已完成首次配置
+  // 重新加载后保持已完成首次配置，且不再弹出使用须知
   await page.reload();
   await page.getByText(/早上好|中午好|下午好|晚上好|夜深了/).waitFor();
-  check(true, '刷新后直接进入我的 AI（配置已保存）');
+  check(await page.getByRole('dialog').count() === 0, '刷新后直接进入我的 AI（配置与须知确认已保存）');
+
+  // 卸载：应用内确认框，说明会自动关闭软件
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.setViewportSize({ width: 1200, height: 820 });
+  await page.locator('.tile', { hasText: 'Kimi' }).locator('.more').click();
+  await page.locator('.menu').getByRole('button', { name: /卸载/ }).click();
+  await page.getByRole('dialog', { name: /卸载 Kimi/ }).waitFor();
+  check(await page.getByText('包括它在托盘或后台运行的进程').count() === 1, '卸载确认框说明会关闭后台进程');
+  await shot(page, 'uninstall-confirm');
+  if (!REAL) {
+    await page.getByRole('button', { name: '关闭并卸载' }).click();
+    await page.waitForFunction(() => window.__aistation.state.jobs.some((j) => j.action === 'uninstall' && j.status === 'success'), null, { timeout: 30000 });
+    check(true, '卸载任务完成');
+  } else {
+    await page.getByRole('button', { name: '取消' }).click();
+  }
 
   check(errors.length === 0, '浏览器控制台无错误' + (errors.length ? '：' + errors.join(' | ') : ''));
   await browser.close();
@@ -195,6 +227,7 @@ main().then(() => {
   console.log(results.join('\n'));
   console.log(`\nE2E 通过，截图：${out}`);
   server.kill();
+  if (sizeServer) sizeServer.close();
   process.exit(0);
 }).catch((e) => {
   console.log(results.join('\n'));

@@ -132,6 +132,13 @@
   function avatar(app, size) {
     const letter = app.letter || app.name[0];
     const cls = 'avatar' + (size ? ' ' + size : '') + (letter.length > 1 ? ' long' : '');
+    // 1. 内置的官方图标（安装前也能显示）  2. 已安装软件的程序图标  3. 文字头像
+    const builtin = S.icons && S.icons[app.id];
+    if (builtin) {
+      return '<span class="' + cls + ' img logo' + (builtin.full ? ' full' : '') + '" data-letter="' + esc(letter) + '" style="--c:' + esc(app.color) + '">' +
+        '<img alt="" src="icons/' + encodeURIComponent(app.id) + '.png" ' +
+        'onerror="var p=this.parentNode;p.className=p.className.replace(/ img| logo| full/g,\'\');p.textContent=p.dataset.letter"></span>';
+    }
     const info = S.installed[app.id];
     if (info && info.installed && info.exe) {
       return '<span class="' + cls + ' img" data-letter="' + esc(letter) + '" style="--c:' + esc(app.color) + '">' +
@@ -274,7 +281,7 @@
               <div class="go">进入软件库 ${icon('right')}</div>
             </button>
           </div>
-          <p class="fine">软件通过 Windows 官方 winget 软件源或 Microsoft Store 安装，安装包来自各软件的官方下载地址。</p>
+          <p class="fine">软件通过 Windows 官方 winget 软件源或 Microsoft Store 安装，安装包来自各软件的官方下载地址。<br>AI Station 不提供任何代理或跨境网络服务。<a href="#" data-act="show-disclaimer">使用须知</a></p>
         </div>
       </div>`;
   }
@@ -339,6 +346,9 @@
             <button class="btn ghost" data-act="quiz-back">${icon('left')}上一步</button>
             <span class="grow"></span>
             <button class="btn primary lg" data-act="quiz-next" ${q.network ? '' : 'disabled'}>下一步 ${icon('right')}</button>
+          </div>
+          <p class="fine-note">${icon('info')}AI Station 不提供任何代理或跨境网络服务，“可以访问海外服务”仅用于判断推荐哪些软件。请遵守所在地法律法规。<a href="#" data-act="show-disclaimer">使用须知</a></p>
+          <div>
           </div>
         </div>`;
     } else {
@@ -497,7 +507,7 @@
     if (!act.length) return '';
     const first = act[0];
     const name = byId[first.appId] ? byId[first.appId].name : (first.arg || '');
-    return `<div class="banner">${icon('loader', 'spin')}<span class="grow">${esc(actionName(first.action))} ${esc(name)}${act.length > 1 ? ' 等 ' + act.length + ' 个任务' : ''}：${esc(first.message)}</span>
+    return `<div class="banner">${icon('loader', 'spin')}<span class="grow">${esc(actionName(first.action))} ${esc(name)}${act.length > 1 ? ' 等 ' + act.length + ' 个任务' : ''}：${esc(jobShort(first))}</span>
       <button class="btn sm" data-act="nav" data-id="tasks">查看进度</button></div>`;
   }
 
@@ -548,12 +558,58 @@
     });
   }
 
+  function fmtMB(bytes) {
+    if (!bytes) return '0 MB';
+    return bytes >= 1073741824 ? (bytes / 1073741824).toFixed(2) + ' GB' : (bytes / 1048576).toFixed(1) + ' MB';
+  }
+
+  function fmtDuration(sec) {
+    sec = Math.max(0, Math.round(sec));
+    if (sec < 60) return sec + ' 秒';
+    return Math.floor(sec / 60) + ' 分 ' + (sec % 60) + ' 秒';
+  }
+
+  /** 任务当前阶段的简短描述，用于卡片和横幅。 */
+  function jobShort(job) {
+    if (job.status === 'queued') return '排队中';
+    if (job.phase === 'download') return job.progress != null ? '下载中 ' + Math.round(job.progress) + '%' : '下载中 ' + fmtMB(job.downloaded);
+    if (job.phase === 'install') return actionName(job.action) + '中…';
+    if (job.phase === 'prepare') return '准备中…';
+    return actionName(job.action) + '中…';
+  }
+
+  /** 下载阶段的详细数据：已下载 / 总大小 · 速度 · 剩余时间。 */
+  function jobDetail(j) {
+    if (j.status !== 'running') return '';
+    if (j.phase === 'download' && j.downloaded > 0) {
+      const parts = [j.total > 0 ? fmtMB(j.downloaded) + ' / ' + fmtMB(j.total) : '已下载 ' + fmtMB(j.downloaded)];
+      if (j.speed > 0) {
+        parts.push(fmtMB(j.speed) + '/s');
+        if (j.total > j.downloaded) parts.push('剩余约 ' + fmtDuration((j.total - j.downloaded) / j.speed));
+      }
+      return parts.join(' · ');
+    }
+    if (j.phase === 'install' && j.phaseStartedAt) return '已用时 ' + fmtDuration((Date.now() - j.phaseStartedAt) / 1000);
+    return '';
+  }
+
+  function jobSteps(j) {
+    if (!(j.action === 'install' || j.action === 'upgrade') || !j.phase) return '';
+    const order = ['prepare', 'download', 'install'];
+    const names = { prepare: '查询', download: '下载', install: j.action === 'upgrade' ? '更新' : '安装' };
+    const cur = j.status === 'success' ? 3 : order.indexOf(j.phase);
+    return '<div class="steps-mini">' + order.map((p, i) => {
+      const st = i < cur ? 'done' : i === cur && j.status === 'running' ? 'on' : i === cur ? 'stop' : '';
+      return (i ? '<span class="ln ' + (i <= cur ? 'done' : '') + '"></span>' : '') +
+        '<span class="st ' + st + '">' + (i < cur ? icon('check') : '<i>' + (i + 1) + '</i>') + names[p] + '</span>';
+    }).join('') + '</div>';
+  }
+
   function appAction(a, small) {
     const sz = small ? ' sm' : '';
     const job = jobFor(a.id);
     if (job) {
-      const pct = job.status === 'running' && job.progress != null ? ' ' + Math.round(job.progress) + '%' : '';
-      return `<span class="status-line">${icon('loader', 'spin')}${job.status === 'queued' ? '排队中' : esc(actionName(job.action)) + '中' + pct}</span>`;
+      return `<span class="status-line">${icon('loader', 'spin')}${esc(jobShort(job))}</span>`;
     }
     if (a.kind === 'web') {
       return webAdded(a.id)
@@ -641,7 +697,9 @@
         let ops = '';
         if (j.status === 'queued') ops = `<button class="btn sm" data-act="job-cancel" data-id="${j.id}">取消</button>`;
         if (j.status === 'success' && j.action === 'install' && byId[j.appId]) ops = `<button class="btn sm" data-act="launch" data-id="${j.appId}">${icon('play')}启动</button>`;
-        if (j.status === 'failed') ops = `<button class="btn sm" data-act="job-retry" data-id="${j.id}">${icon('refresh')}重试</button>`;
+        if (j.status === 'failed') ops = j.hint === 'running'
+          ? `<button class="btn sm primary" data-act="job-close-retry" data-id="${j.id}">${icon('x')}关闭 ${esc(byId[j.appId] ? byId[j.appId].name : '')} 并重试</button>`
+          : `<button class="btn sm" data-act="job-retry" data-id="${j.id}">${icon('refresh')}重试</button>`;
         if ((j.status === 'failed' || j.status === 'manual') && j.action === 'install' && byId[j.appId])
           ops += `<button class="btn sm" data-act="open-home" data-id="${j.appId}">${icon('external')}官网下载</button>`;
         return `
@@ -649,8 +707,11 @@
             ${jobAvatar(j)}
             <div class="t"><span>${esc(jobTitle(j))}</span>${j.via ? '<span class="tag">' + esc(j.via) + '</span>' : ''}</div>
             <div class="ops">${ops}</div>
-            <div class="m">${statusIcon}<span>${esc(j.message)}${running && pct != null ? ' · ' + pct + '%' : ''}</span></div>
+            <div class="m">${statusIcon}<span>${esc(j.message)}${running && pct != null ? ' · <b>' + pct + '%</b>' : ''}</span></div>
+            ${jobSteps(j)}
             ${running ? `<div class="bar ${pct == null ? 'busy' : ''}"><i style="width:${pct == null ? 30 : pct}%"></i></div>` : ''}
+            ${jobDetail(j) ? `<div class="detail">${esc(jobDetail(j))}</div>` : ''}
+            ${j.hint === 'running' && j.status === 'failed' ? `<div class="detail">很多软件关掉窗口后仍在托盘或后台运行。点击「关闭并重试」，AI Station 会先尝试正常关闭它，关不掉再强制结束。请先保存其中未保存的内容。</div>` : ''}
             ${j.log && j.log.length ? `<details data-job="${j.id}" ${ui.openLogs && ui.openLogs.has(j.id) ? 'open' : ''}><summary>详细输出</summary><pre>${esc(j.log.join('\n'))}</pre></details>` : ''}
           </div>`;
       }).join('')}</div>` : `<div class="empty"><div class="art">${icon('download')}</div><h3>没有任务</h3><p>在软件库中安装软件，或在「我的 AI」中更新、卸载软件时，进度会显示在这里。</p></div>`}
@@ -744,7 +805,8 @@
         <div class="list-row"><div class="grow"><div class="name">数据与日志</div><div class="muted">${esc(S.system.dataDir)}</div></div>
           <button class="btn sm" data-act="open-data-dir">${icon('folder')}打开文件夹</button></div>
       </div>
-      <p class="muted" style="margin-top:18px">AI Station v${esc(S.version)} · 只负责通过官方渠道安装和启动软件，各软件的账号、费用和数据政策以其官方说明为准。</p>
+      <div class="panel" style="margin-top:14px"><h3>使用须知与免责声明</h3>${disclaimerHtml()}</div>
+      <p class="muted" style="margin-top:18px">AI Station v${esc(S.version)}</p>
     `);
   }
 
@@ -773,6 +835,7 @@
           <p>${esc(a.summary)}</p>
           ${reasons.length ? '<h3>适合用来</h3><ul>' + reasons.map((n) => '<li>' + icon('check') + '<span><b>' + esc(needById[n].label) + '</b>：' + esc(a.why[n]) + '</span></li>').join('') + '</ul>' : ''}
           ${(a.notes || []).length ? '<h3>注意事项</h3><ul>' + a.notes.map((n) => '<li>' + icon('info') + '<span>' + esc(n) + '</span></li>').join('') + '</ul>' : ''}
+          ${a.region === 'global' ? '<p class="fine-note">' + icon('globe') + '该软件的服务器位于境外，能否使用取决于你的网络环境和该服务的地区政策。AI Station 不提供任何网络代理服务。<a href="#" data-act="show-disclaimer">使用须知</a></p>' : ''}
           <h3>安装信息</h3>
           <dl class="kv">
             <dt>安装方式</dt><dd>${esc(installLabel(a))}</dd>
@@ -799,6 +862,40 @@
       <div class="menu" style="left:${m.x}px;top:${m.y}px">${items.join('')}</div>`;
   }
 
+  const DISCLAIMER = [
+    ['不提供网络服务', 'AI Station 只是软件的下载、安装和启动工具，不提供、不内置、也不推荐任何代理、VPN 或其他跨境网络访问服务。'],
+    ['关于“需海外网络”', '标注为“需海外网络”的软件，其服务器位于境外，能否使用取决于你所在地区的网络环境和该服务的地区政策。请在遵守所在地法律法规的前提下使用；因网络原因无法访问或无法使用，AI Station 不承担责任。'],
+    ['网络检测', '为了在问卷中预判网络环境，AI Station 会尝试连接 www.baidu.com 和 www.google.com，只判断能否连通，不收集、不上传任何个人信息或使用数据。'],
+    ['下载来源', '软件通过 Windows 官方的 winget 软件源或 Microsoft Store 从各软件的官方地址下载，下载速度和成功率取决于你的网络状况和对方服务器。'],
+    ['第三方软件', '各 AI 软件由其厂商提供，账号、收费、数据隐私和生成内容由各厂商负责，请阅读并遵守其用户协议。AI 生成的内容可能不准确，请自行核实。']
+  ];
+
+  function disclaimerHtml() {
+    return '<ol class="disclaimer">' + DISCLAIMER.map((d) => '<li><b>' + esc(d[0]) + '</b><span>' + esc(d[1]) + '</span></li>').join('') + '</ol>';
+  }
+
+  function disclaimerModal(readOnly) {
+    return {
+      title: '使用须知',
+      body: '<p class="muted">使用 AI Station 前，请阅读以下说明：</p>' + disclaimerHtml(),
+      actions: readOnly
+        ? [{ label: '知道了', act: 'modal-close', cls: 'primary' }]
+        : [{ label: '同意并继续', act: 'accept-disclaimer', cls: 'primary' }],
+      blocking: !readOnly
+    };
+  }
+
+  function viewModal() {
+    const m = ui.modal;
+    if (!m) return '';
+    return `<div class="overlay modal-overlay" ${m.blocking ? '' : 'data-act="modal-close"'}></div>
+      <div class="modal" role="dialog" aria-modal="true" aria-label="${esc(m.title)}">
+        <h2>${esc(m.title)}</h2>
+        <div class="modal-body">${m.body}</div>
+        <div class="modal-foot">${m.actions.map((x) => `<button class="btn ${x.cls || ''}" data-act="${x.act}" ${x.id ? 'data-id="' + esc(x.id) + '"' : ''}>${esc(x.label)}</button>`).join('')}</div>
+      </div>`;
+  }
+
   // ---------------------------------------------------------------- 渲染
 
   function render(navigated) {
@@ -814,7 +911,7 @@
       case 'settings': html = viewSettings(); break;
       default: html = viewHome();
     }
-    html += viewDetail() + viewMenu();
+    html += viewDetail() + viewMenu() + viewModal();
 
     const scroller = root.querySelector('.content, .onboard');
     const top = scroller ? scroller.scrollTop : 0;
@@ -907,10 +1004,34 @@
     uninstall: (el) => {
       const a = byId[el.dataset.id];
       ui.menu = null;
-      if (!confirm('确定要卸载 ' + a.name + ' 吗？')) { render(); return; }
-      ui.detail = null;
-      startJobs([{ action: 'uninstall', appId: a.id }], '正在卸载 ' + a.name);
+      ui.modal = {
+        title: '卸载 ' + a.name + '？',
+        body: '<p>卸载前，AI Station 会自动关闭正在运行的 ' + esc(a.name) + '，包括它在托盘或后台运行的进程。</p>' +
+          '<p class="muted">如果 ' + esc(a.name) + ' 里有没保存的内容，请先保存。卸载会删除程序本身，一般不会删除你的账号数据。</p>',
+        actions: [
+          { label: '取消', act: 'modal-close', cls: 'ghost' },
+          { label: '关闭并卸载', act: 'confirm-uninstall', cls: 'danger-solid', id: a.id }
+        ]
+      };
+      render();
     },
+    'confirm-uninstall': (el) => {
+      const a = byId[el.dataset.id];
+      ui.modal = null;
+      ui.detail = null;
+      startJobs([{ action: 'uninstall', appId: a.id, arg: 'close' }], '正在卸载 ' + a.name);
+    },
+    'modal-close': () => { ui.modal = null; render(); },
+    'job-close-retry': (el) => {
+      const j = S.jobs.find((x) => x.id === +el.dataset.id);
+      if (j) startJobs([{ action: j.action, appId: j.appId, arg: 'close', target: j.target }], '正在关闭 ' + (byId[j.appId] ? byId[j.appId].name : '') + ' 后重试');
+    },
+    'accept-disclaimer': async () => {
+      try { S.profile = await api('profile', { disclaimerAccepted: true }); } catch (e) { fail(e); }
+      ui.modal = null;
+      render();
+    },
+    'show-disclaimer': () => { ui.modal = disclaimerModal(true); render(); },
     'web-remove': async (el) => {
       try { S.profile = await api('web-shortcut', { id: el.dataset.id, add: false }); ui.menu = null; ui.detail = null; render(); }
       catch (e) { fail(e); }
@@ -965,6 +1086,7 @@
   });
 
   document.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape' && ui.modal && !ui.modal.blocking) { ui.modal = null; render(); return; }
     if (ev.key === 'Escape' && (ui.detail || ui.menu)) { ui.detail = null; ui.menu = null; render(); return; }
     if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.matches('[role="button"][data-act], [role="checkbox"][data-act], .card[data-act]')) {
       ev.preventDefault();
@@ -1008,7 +1130,8 @@
       // 任务刚结束：给出提示
       const nowActive = activeJobs().length > 0;
       hadActive = nowActive;
-      if (stateKey() !== ui.lastKey && !ui.menu) render();
+      const ticking = S.jobs.some((j) => j.status === 'running' && j.phase === 'install');
+      if ((stateKey() !== ui.lastKey || ticking) && !ui.menu) render();
       schedulePoll(nowActive || S.scanning || !S.hardware || !S.network ? 1000 : 5000);
     } catch (e) {
       schedulePoll(3000);
@@ -1034,6 +1157,7 @@
     }
     api('ping', {}).catch(() => {});
     ui.view = S.profile.onboarded ? 'home' : 'welcome';
+    if (!S.profile.disclaimerAccepted) ui.modal = disclaimerModal(false);
     render(true);
     lastFull = Date.now();
     schedulePoll(800);

@@ -58,6 +58,8 @@ try {
     $job = $r.jobs[-1]; $job.log | Select-Object -Last 15 | ForEach-Object { Write-Host "  | $_" }
     Write-Host "结果：$($job.status) $($job.message)"
     if ($job.status -ne 'success') { throw '安装失败' }
+    Write-Host ("下载进度测量：已下载 {0:N1} MB / 总大小 {1:N1} MB" -f ($job.downloaded / 1MB), ($job.total / 1MB))
+    if (-not ($job.total -gt 0 -and $job.downloaded -gt 0)) { throw '没有测量到真实下载进度' }
     $null = Post 'refresh' @{}; Start-Sleep 2; $null = WaitJobs
     $info = (State).installed.$AppId
     Write-Host "识别：$($info | ConvertTo-Json -Compress)"
@@ -78,18 +80,17 @@ try {
     $r = WaitJobs
     $job = $r.jobs[-1]
     Write-Host "结果：$($job.status) $($job.message)"
-    if ($job.status -ne 'failed' -or $job.message -notmatch '正在运行') { throw '软件运行时没有提示先关闭' }
+    if ($job.status -ne 'failed' -or $job.message -notmatch '正在运行' -or $job.hint -ne 'running') { throw '软件运行时没有提示先关闭' }
 
-    Get-Process | Where-Object { $_.Path -and $_.Path.StartsWith($dir, [StringComparison]::OrdinalIgnoreCase) } | Stop-Process -Force -ErrorAction SilentlyContinue
-    Start-Sleep 3
-
-    Write-Host "== 卸载 $AppId"
-    $null = Post 'jobs' @{ jobs = @(@{ action = 'uninstall'; appId = $AppId }) }
+    Write-Host "== 关闭并卸载 $AppId（软件仍在运行，由 AI Station 自动关闭）"
+    $null = Post 'jobs' @{ jobs = @(@{ action = 'uninstall'; appId = $AppId; arg = 'close' }) }
     $r = WaitJobs
     $job = $r.jobs[-1]; $job.log | Select-Object -Last 10 | ForEach-Object { Write-Host "  | $_" }
     Write-Host "结果：$($job.status) $($job.message)"
     if ($job.status -ne 'success') { throw '卸载失败' }
     if ((State).installed.$AppId.installed) { throw '卸载后仍识别为已安装' }
+    $left = @(Get-Process | Where-Object { $_.Path -and $_.Path.StartsWith($dir, [StringComparison]::OrdinalIgnoreCase) })
+    if ($left.Count -gt 0) { throw "卸载后仍有进程在运行：$($left.ProcessName -join ', ')" }
     Write-Host '真实安装 / 识别 / 启动 / 卸载 全部通过'
 } finally {
     Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue

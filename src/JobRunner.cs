@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -26,6 +27,13 @@ namespace AIStation
         public long CreatedAt, StartedAt, FinishedAt;
         public readonly List<string> Lines = new List<string>();
         public string CurrentLine;
+        public string Hint;              // running = 因软件正在运行而失败，界面提供“关闭并重试”
+        // 安装 / 更新的阶段与下载进度（来自对 winget 下载文件的实际测量）
+        public string Phase;             // prepare / download / install
+        public long PhaseStartedAt;
+        public long Downloaded;          // 已下载字节
+        public long Total;               // 安装包总字节，0 = 未知
+        public double Speed;             // 字节/秒
 
         public bool Finished
         {
@@ -53,6 +61,12 @@ namespace AIStation
             for (int i = start; i < Lines.Count; i++) lines.Add(Lines[i]);
             if (!string.IsNullOrEmpty(CurrentLine)) lines.Add(CurrentLine);
             d["log"] = lines;
+            d["hint"] = Hint;
+            d["phase"] = Phase;
+            d["phaseStartedAt"] = PhaseStartedAt;
+            d["downloaded"] = Downloaded;
+            d["total"] = Total;
+            d["speed"] = Math.Round(Speed);
             return d;
         }
     }
@@ -256,14 +270,244 @@ namespace AIStation
             if (_core.WingetSupportsDisableInteractivity()) args.Append(" --disable-interactivity");
 
             job.Via = app.Source == "msstore" ? "Microsoft Store" : "winget";
-            SetMessage(job, verb == "install" ? "正在连接软件源…" : "正在检查…");
-            var code = RunProcess(job, _core.WingetPath, args.ToString(), WingetLine);
+            InstallerInfo installer = null;
+            if (verb != "uninstall")
+            {
+                SetPhase(job, "prepare", "正在查询安装包信息…");
+                if (app.Source == "winget") installer = QueryInstaller(job, app);
+            }
+            else SetMessage(job, "正在检查…");
+
+            var monitor = new DownloadMonitor(this, job, app, installer);
+            if (verb != "uninstall") monitor.Start();
+            int code;
+            try { code = RunProcess(job, _core.WingetPath, args.ToString(), WingetLine); }
+            finally { monitor.Stop(); }
             job.ExitCode = code;
 
             string friendly;
             var outcome = WingetOutcome(code, verb, out friendly);
             if (outcome == "success" && verb == "install") _core.MarkInstalled(app.Id);
             Finish(job, outcome, friendly);
+        }
+
+        internal object Lock { get { return _jobs; } }
+
+        internal void SetPhase(Job job, string phase, string message)
+        {
+            lock (_jobs)
+            {
+                if (job.Phase == phase) { if (message != null) job.Message = message; return; }
+                // 阶段只前进不后退
+                if (job.Phase == "install" && phase != "install") return;
+                if (job.Phase == "download" && phase == "prepare") return;
+                job.Phase = phase;
+                job.PhaseStartedAt = Time.NowMs();
+                if (message != null) job.Message = message;
+                if (phase == "install") { job.Progress = -1; job.Speed = 0; }
+            }
+        }
+
+        internal sealed class InstallerInfo
+        {
+            public string Url;
+            public string Version;
+            public long Size;
+        }
+
+        private static readonly Regex UrlRe = new Regex(@"https?://[^\s""']+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        private static readonly Regex InstallerUrlRe = new Regex(@"^\s*(Installer\s*Url|安装程序\s*URL)\s*[:：]\s*(https?://\S+)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.CultureInvariant);
+        private static readonly Regex VersionRe = new Regex(@"^\s*(Version|版本)\s*[:：]\s*(\S+)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.CultureInvariant);
+
+        /// <summary>用 winget show 查到本机将使用的安装包地址，再读取文件大小，用于计算真实下载进度。</summary>
+        private InstallerInfo QueryInstaller(Job job, AppDef app)
+        {
+            var info = new InstallerInfo();
+            try
+            {
+                var args = "show --id \"" + app.PackageId + "\" --exact --source winget --accept-source-agreements";
+                if (_core.WingetSupportsDisableInteractivity()) args += " --disable-interactivity";
+                var psi = new ProcessStartInfo(_core.WingetPath, args)
+                {
+                    UseShellExecute = false, CreateNoWindow = true,
+                    RedirectStandardOutput = true, RedirectStandardError = true,
+                    StandardOutputEncoding = Encoding.UTF8
+                };
+                string output;
+                using (var p = Process.Start(psi))
+                {
+                    var errTask = new Thread(() => { try { p.StandardError.ReadToEnd(); } catch (Exception) { } }) { IsBackground = true };
+                    errTask.Start();
+                    output = p.StandardOutput.ReadToEnd();
+                    if (!p.WaitForExit(60000)) { try { p.Kill(); } catch (Exception) { } }
+                }
+                var m = InstallerUrlRe.Match(output);
+                if (m.Success) info.Url = m.Groups[2].Value;
+                else
+                {
+                    // winget show 的安装程序信息在最后，取最后一个链接
+                    var all = UrlRe.Matches(output);
+                    if (all.Count > 0) info.Url = all[all.Count - 1].Value;
+                }
+                var v = VersionRe.Match(output);
+                if (v.Success) info.Version = v.Groups[2].Value;
+                if (info.Url != null) info.Size = RemoteSize(info.Url);
+                Log.Write("安装包信息 {0}：版本 {1}，{2}，大小 {3}", app.Id, info.Version, info.Url, info.Size);
+                if (info.Size > 0) AddLine(job, "安装包：" + Path.GetFileName(new Uri(info.Url).AbsolutePath) + "（" + FormatBytes(info.Size) + "）");
+            }
+            catch (Exception ex) { Log.Write("查询安装包信息失败: {0}", ex.Message); }
+            return info;
+        }
+
+        private static long RemoteSize(string url)
+        {
+            try
+            {
+                var req = (HttpWebRequest)WebRequest.Create(url);
+                req.Method = "HEAD";
+                req.Timeout = 8000;
+                req.UserAgent = "winget-cli";
+                using (var res = (HttpWebResponse)req.GetResponse())
+                    if (res.ContentLength > 0) return res.ContentLength;
+            }
+            catch (Exception) { }
+            try
+            {
+                // 部分 CDN 不支持 HEAD：只请求第一个字节，从 Content-Range 读总大小
+                var req = (HttpWebRequest)WebRequest.Create(url);
+                req.AddRange(0, 0);
+                req.Timeout = 8000;
+                req.UserAgent = "winget-cli";
+                using (var res = (HttpWebResponse)req.GetResponse())
+                {
+                    var range = res.Headers["Content-Range"];
+                    long total;
+                    if (range != null && range.Contains("/") && long.TryParse(range.Substring(range.LastIndexOf('/') + 1), out total)) return total;
+                }
+            }
+            catch (Exception) { }
+            return 0;
+        }
+
+        internal static string FormatBytes(long bytes)
+        {
+            if (bytes >= 1073741824) return (bytes / 1073741824.0).ToString("0.0", CultureInfo.InvariantCulture) + " GB";
+            return (bytes / 1048576.0).ToString("0.0", CultureInfo.InvariantCulture) + " MB";
+        }
+
+        /// <summary>
+        /// winget 的输出被重定向时不打印进度条，这里直接测量它写入临时目录的安装包大小来得到真实下载进度。
+        /// </summary>
+        private sealed class DownloadMonitor
+        {
+            private readonly JobRunner _runner;
+            private readonly Job _job;
+            private readonly AppDef _app;
+            private readonly InstallerInfo _installer;
+            private readonly DateTime _startUtc = DateTime.UtcNow.AddSeconds(-5);
+            private volatile bool _stop;
+            private Thread _thread;
+            private string _foundPath;
+
+            public DownloadMonitor(JobRunner runner, Job job, AppDef app, InstallerInfo installer)
+            {
+                _runner = runner; _job = job; _app = app; _installer = installer;
+            }
+
+            public void Start()
+            {
+                if (_app.Source != "winget") return;
+                _thread = new Thread(Loop) { IsBackground = true, Name = "download-monitor" };
+                _thread.Start();
+            }
+
+            public void Stop()
+            {
+                _stop = true;
+                if (_thread != null) _thread.Join(2000);
+                if (_foundPath == null && _thread != null) Log.Write("未找到 {0} 的下载文件（查找位置：{1}）", _app.Id, string.Join("; ", Roots().ToArray()));
+            }
+
+            private static List<string> Roots()
+            {
+                var list = new List<string>();
+                list.Add(Path.Combine(Path.GetTempPath(), "WinGet"));
+                list.Add(Path.Combine(Path.Combine(Paths.LocalAppData, "Temp"), "WinGet"));
+                list.Add(Path.Combine(Path.Combine(Path.Combine(Path.Combine(Path.Combine(Paths.LocalAppData, "Packages"),
+                    "Microsoft.DesktopAppInstaller_8wekyb3d8bbwe"), "AC"), "Temp"), "WinGet"));
+                return list;
+            }
+
+            private FileInfo Find()
+            {
+                FileInfo best = null;
+                foreach (var root in Roots())
+                {
+                    try
+                    {
+                        if (!Directory.Exists(root)) continue;
+                        foreach (var dir in Directory.GetDirectories(root, _app.PackageId + "*"))
+                        {
+                            foreach (var f in Directory.GetFiles(dir, "*", SearchOption.AllDirectories))
+                            {
+                                var fi = new FileInfo(f);
+                                if (fi.LastWriteTimeUtc < _startUtc) continue;
+                                if (best == null || fi.Length > best.Length) best = fi;
+                            }
+                        }
+                    }
+                    catch (Exception) { }
+                }
+                return best;
+            }
+
+            private void Loop()
+            {
+                long lastSize = 0;
+                DateTime lastTime = DateTime.UtcNow, lastGrowth = DateTime.UtcNow;
+                double speed = 0;
+                long total = _installer == null ? 0 : _installer.Size;
+                lock (_runner.Lock) _job.Total = total;
+                while (!_stop)
+                {
+                    Thread.Sleep(400);
+                    FileInfo f;
+                    try { f = Find(); } catch (Exception) { continue; }
+                    if (f == null) continue;
+                    if (_foundPath == null)
+                    {
+                        _foundPath = f.FullName;
+                        Log.Write("监测下载文件：{0}", _foundPath);
+                    }
+                    long size;
+                    try { f.Refresh(); size = f.Length; } catch (Exception) { continue; }
+                    var now = DateTime.UtcNow;
+                    var dt = (now - lastTime).TotalSeconds;
+                    if (size > lastSize && dt > 0)
+                    {
+                        var inst = (size - lastSize) / dt;
+                        speed = speed <= 0 ? inst : speed * 0.7 + inst * 0.3;
+                        lastGrowth = now;
+                    }
+                    lastSize = size;
+                    lastTime = now;
+                    bool done = total > 0 ? size >= total : (now - lastGrowth).TotalSeconds > 4 && size > 0;
+                    if (done)
+                    {
+                        lock (_runner.Lock) { _job.Downloaded = size; _job.Speed = 0; }
+                        _runner.SetPhase(_job, "install", "下载完成，正在安装…（如弹出权限确认，请点“是”）");
+                        return;
+                    }
+                    _runner.SetPhase(_job, "download", "正在下载…");
+                    lock (_runner.Lock)
+                    {
+                        if (_job.Phase != "download") return;
+                        _job.Downloaded = size;
+                        _job.Speed = speed;
+                        _job.Progress = total > 0 ? Math.Min(99.9, size * 100.0 / total) : -1;
+                    }
+                }
+            }
         }
 
         private static string VerbName(string verb)
@@ -311,12 +555,11 @@ namespace AIStation
         private void WingetLine(Job job, string line)
         {
             var l = line.ToLowerInvariant();
-            if (l.Contains("downloading") || line.Contains("正在下载")) SetMessage(job, "正在下载…");
+            if (l.Contains("downloading") || line.Contains("正在下载")) SetPhase(job, "download", "正在下载…");
             else if (l.Contains("verified installer hash") || line.Contains("已成功验证安装程序哈希")) SetMessage(job, "下载完成，校验通过");
             else if (l.Contains("starting package install") || line.Contains("正在启动程序包安装") || line.Contains("开始安装程序包"))
             {
-                SetMessage(job, "正在安装…（如弹出权限确认，请点“是”）");
-                lock (_jobs) job.Progress = -1;
+                SetPhase(job, "install", "正在安装…（如弹出权限确认，请点“是”）");
             }
             else if (l.Contains("starting package uninstall") || line.Contains("正在启动程序包卸载")) SetMessage(job, "正在卸载…");
             else if (l.Contains("no available upgrade") || l.Contains("no applicable upgrade")) SetMessage(job, "已是最新版本");
@@ -489,32 +732,74 @@ namespace AIStation
             Finish(job, "manual", "卸载程序仍在运行，可能在等待你确认；完成后点击「刷新」");
         }
 
-        /// <summary>软件正在运行时卸载/更新会被安装程序的弹窗卡住，提前检查并提示用户关闭。</summary>
+        /// <summary>
+        /// 软件运行时（很多软件关掉窗口后仍在托盘/后台运行）卸载程序会卡在“请先关闭”弹窗上。
+        /// job.Arg == "close" 表示用户已同意：先正常关闭，关不掉再强制结束；否则提示用户并提供“关闭并重试”。
+        /// </summary>
         private bool IsRunning(Job job, AppDef app)
         {
+            var procs = ProcessesOf(app);
+            if (procs.Count == 0) return false;
+            var names = new List<string>();
+            foreach (var p in procs) if (!names.Contains(p.ProcessName)) names.Add(p.ProcessName);
+            AddLine(job, "正在运行的进程：" + string.Join(", ", names.ToArray()));
+
+            if (job.Arg != "close")
+            {
+                foreach (var p in procs) p.Dispose();
+                lock (_jobs) job.Hint = "running";
+                Finish(job, "failed", app.Name + " 正在运行（可能在托盘或后台），需要先关闭");
+                return true;
+            }
+
+            SetMessage(job, "正在关闭 " + app.Name + "…");
+            foreach (var p in procs)
+            {
+                try { if (p.MainWindowHandle != IntPtr.Zero) p.CloseMainWindow(); } catch (Exception) { }
+            }
+            for (int i = 0; i < 10 && ProcessesOf(app).Count > 0; i++) Thread.Sleep(500);
+            foreach (var p in ProcessesOf(app))
+            {
+                try { p.Kill(); AddLine(job, "已结束进程 " + p.ProcessName + "（" + p.Id + "）"); }
+                catch (Exception ex) { AddLine(job, "无法结束 " + p.ProcessName + "：" + ex.Message); }
+            }
+            foreach (var p in procs) p.Dispose();
+            for (int i = 0; i < 10 && ProcessesOf(app).Count > 0; i++) Thread.Sleep(500);
+            var left = ProcessesOf(app);
+            if (left.Count == 0)
+            {
+                AddLine(job, app.Name + " 已关闭");
+                return false;
+            }
+            foreach (var p in left) p.Dispose();
+            Finish(job, "failed", "无法自动关闭 " + app.Name + "，请重启电脑后再试");
+            return true;
+        }
+
+        /// <summary>安装目录下正在运行的全部进程（包括托盘、后台服务等子进程）。</summary>
+        private List<Process> ProcessesOf(AppDef app)
+        {
+            var result = new List<Process>();
             InstallInfo info;
             lock (_core.Sync) _core.Installed.TryGetValue(app.Id, out info);
-            if (info == null) return false;
+            if (info == null) return result;
             string dir = null;
             if (!string.IsNullOrEmpty(info.ExePath)) dir = Path.GetDirectoryName(info.ExePath);
             else if (info.Reg != null && !string.IsNullOrEmpty(info.Reg.InstallLocation)) dir = Detector.CleanPath(info.Reg.InstallLocation);
-            if (string.IsNullOrEmpty(dir) || dir.Length < 8) return false;
+            if (string.IsNullOrEmpty(dir) || dir.Length < 8) return result;
             dir = dir.TrimEnd('\\') + "\\";
-            var names = new List<string>();
+            var self = Process.GetCurrentProcess().Id;
             foreach (var p in Process.GetProcesses())
             {
+                bool keep = false;
                 try
                 {
-                    var file = p.MainModule.FileName;
-                    if (file.StartsWith(dir, StringComparison.OrdinalIgnoreCase) && !names.Contains(p.ProcessName)) names.Add(p.ProcessName);
+                    keep = p.Id != self && p.MainModule.FileName.StartsWith(dir, StringComparison.OrdinalIgnoreCase);
                 }
                 catch (Exception) { } // 无权限访问的系统进程
-                finally { p.Dispose(); }
+                if (keep) result.Add(p); else p.Dispose();
             }
-            if (names.Count == 0) return false;
-            AddLine(job, "正在运行的进程：" + string.Join(", ", names.ToArray()));
-            Finish(job, "failed", app.Name + " 正在运行，请先完全退出它（包括托盘图标）再重试");
-            return true;
+            return result;
         }
 
         // ---------- 模型 ----------

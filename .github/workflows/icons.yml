@@ -1,0 +1,33 @@
+name: 更新软件图标
+
+# 从各软件官网抓取官方图标，提交到 ui/icons/。目录或脚本变化时自动运行，也可手动触发。
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ui/catalog.json
+      - tools/fetch_icons.py
+      - .github/workflows/icons.yml
+
+permissions:
+  contents: write
+
+jobs:
+  icons:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pillow cairosvg
+      - name: 抓取图标
+        run: python tools/fetch_icons.py
+      - name: 提交变化
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ui/icons
+          if git diff --cached --quiet; then echo "图标没有变化"; exit 0; fi
+          git commit -m "更新软件图标（自动抓取自各软件官网）"
+          git push

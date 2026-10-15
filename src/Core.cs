@@ -115,6 +115,17 @@ namespace AIStation
             Log.Write("目录已加载：{0} 款软件", Apps.Count);
         }
 
+        private Dictionary<string, object> _iconIndex;
+
+        /// <summary>ui/icons/index.json：内置的官方图标（由 tools/fetch_icons.py 生成）。</summary>
+        public Dictionary<string, object> IconIndex()
+        {
+            if (_iconIndex != null) return _iconIndex;
+            var bytes = ReadUiFile("icons/index.json");
+            _iconIndex = bytes == null ? new Dictionary<string, object>() : Json.ParseObject(Encoding.UTF8.GetString(bytes));
+            return _iconIndex;
+        }
+
         public AppDef FindApp(string id)
         {
             AppDef a;
@@ -306,7 +317,7 @@ namespace AIStation
 
         private static readonly string[] ProfileKeys =
         {
-            "onboarded", "answers", "recommendation", "webShortcuts", "hiddenApps", "trayHintShown", "theme"
+            "onboarded", "answers", "recommendation", "webShortcuts", "hiddenApps", "trayHintShown", "theme", "disclaimerAccepted"
         };
 
         public void PatchProfile(Dictionary<string, object> patch)
@@ -561,6 +572,7 @@ namespace AIStation
             var d = new Dictionary<string, object>();
             d["version"] = Version;
             d["catalog"] = CatalogData;
+            d["icons"] = IconIndex();
             d["installed"] = InstalledJson();
             d["jobs"] = Jobs.ToJson();
             lock (Sync)

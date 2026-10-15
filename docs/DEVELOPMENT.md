@@ -89,8 +89,10 @@ build.sh            Mono 编译（开发调试用）
 `winget install --id <ID> --exact --source winget|msstore --silent --accept-source-agreements --accept-package-agreements [--disable-interactivity]`。
 标准输出逐字符读取，`\r` 刷新的进度行解析为百分比（`12.0 MB / 100 MB` 或 `45%`）。实测 winget 的输出被重定向时通常不打印进度条，此时界面显示“进行中”动画和阶段文字（下载中 / 安装中），不虚构数字。常见返回码（已安装、已是最新、下载失败、哈希不匹配、软件正在运行等）翻译成中文提示，未知错误显示十六进制返回码和原始输出。
 
+**下载进度**：winget 的输出被重定向时不打印进度条，所以进度改为实测：安装前先运行 `winget show` 得到本机将使用的安装包地址，用 HEAD（或 Range 请求）读出文件总大小；winget 运行期间，每 0.4 秒测量它写入 `%TEMP%\WinGet\<包ID>.<版本>\` 的安装包大小，计算百分比、速度（指数平滑）和剩余时间。文件达到总大小后进入“安装”阶段，显示已用时间。查不到总大小时只显示已下载量和速度；商店应用没有下载文件，只显示阶段。
+
 **卸载**：winget 卸载时只运行注册表中的普通 `UninstallString`，NSIS / Inno 打包的软件会弹出完整的卸载向导（CI 中 Jan 曾卡在“Click Uninstall to start”）。因此卸载顺序是：
-1. 先检查安装目录下是否有进程在运行，有则提示用户先退出（否则卸载程序会卡在“请先关闭”弹窗上）；
+1. 先检查安装目录下是否有进程在运行（很多软件关掉窗口后仍在托盘或后台）。卸载确认框已告知用户会自动关闭，因此卸载任务带 `arg: "close"`：先 `CloseMainWindow` 正常关闭，5 秒后仍在的进程强制结束。更新任务不会擅自关闭，而是失败并标记 `hint: "running"`，界面提供“关闭并重试”；
 2. 注册表有 `QuietUninstallString` 就用它；否则按 `installerType` 追加 `/S`（NSIS）、`/VERYSILENT`（Inno）或改为 `msiexec /x … /qn`；
 3. 商店应用和类型不明的软件交给 `winget uninstall`；
 4. NSIS 卸载程序会复制到临时目录后在后台继续执行，所以命令返回后会反复重新识别，直到软件真正消失才标记“已卸载”。
@@ -102,6 +104,10 @@ build.sh            Mono 编译（开发调试用）
 2. 每款软件对 8 个用途有 0–3 分（`catalog.json` 的 `scores`），≥2 分才算适合，理由取自 `why`。
 3. “简单省心”和“隐私优先”用贪心覆盖：每轮挑能覆盖最多剩余用途的软件，最多 3 / 4 款；“能力全面”每个用途取前两名，最多 6 款。
 4. 无法覆盖的用途会说明原因；推荐了本地软件时附带模型规格建议（按内存 / 独显显存分 1.7B / 4B / 8B / 14B 四档）。
+
+**软件图标**：`tools/fetch_icons.py` 从官网读取 `iconUrl`（目录中可选）、网页声明的 SVG / apple-touch-icon / icon 链接和 `favicon.ico`，选矢量或分辨率最高者，去掉透明留白后统一为 128px PNG，写入 `ui/icons/<id>.png` 和 `ui/icons/index.json`（`full` 表示自带底色的满版图标）。`.github/workflows/icons.yml` 在目录或脚本变化时自动运行并提交结果。图标显示优先级：内置官方图标 → 已安装软件的程序图标 → 文字头像。
+
+**使用须知**：首次打开界面时弹出（`profile.disclaimerAccepted` 记录是否已同意），文字在 `ui/app.js` 的 `DISCLAIMER` 常量中，设置页显示全文。
 
 ## 6. 维护注意事项
 
