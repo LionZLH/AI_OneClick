@@ -406,7 +406,7 @@ namespace AIStation
             if (app.UsesWinget && _core.WingetVersion != null)
             {
                 RunWingetAction(job, "uninstall");
-                if (job.Status == "success") lock (_core.Sync) _core.Installed.Remove(app.Id);
+                if (job.Status == "success") WaitUntilRemoved(job, app);
                 return;
             }
             InstallInfo info;
@@ -425,8 +425,35 @@ namespace AIStation
                     job.ExitCode = p.ExitCode;
                 }
                 Finish(job, job.ExitCode == 0 ? "success" : "failed", job.ExitCode == 0 ? "已卸载" : "卸载程序返回错误码 " + job.ExitCode);
+                if (job.Status == "success") WaitUntilRemoved(job, app);
             }
             catch (Exception ex) { Finish(job, "failed", "无法运行卸载程序：" + ex.Message); }
+        }
+
+        /// <summary>
+        /// NSIS 等卸载程序会把自己复制到临时目录后在后台继续执行，winget 返回时软件可能还没删掉。
+        /// 这里反复重新识别，直到软件真的消失。
+        /// </summary>
+        private void WaitUntilRemoved(Job job, AppDef app)
+        {
+            lock (_core.Sync) _core.Installed.Remove(app.Id); // 去掉“winget 刚装好”的临时标记
+            for (int i = 0; i < 40; i++)
+            {
+                _core.RefreshInstalled();
+                InstallInfo info;
+                lock (_core.Sync) _core.Installed.TryGetValue(app.Id, out info);
+                if (info == null || !info.Installed)
+                {
+                    if (i > 0) Finish(job, "success", "已卸载");
+                    return;
+                }
+                if (i == 0)
+                {
+                    lock (_jobs) { job.Status = "running"; job.Message = "等待卸载程序完成…"; }
+                }
+                Thread.Sleep(3000);
+            }
+            Finish(job, "success", "卸载程序仍在运行，完成后点击“刷新”");
         }
 
         // ---------- 模型 ----------
