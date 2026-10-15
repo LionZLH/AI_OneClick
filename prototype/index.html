@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>AI 启动器</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+  <script src="catalog.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="launcher">
+    <header>
+      <h1>AI 启动器</h1>
+      <select id="system" aria-label="目标电脑系统">
+        <option value="windows">Windows</option>
+        <option value="macos">macOS</option>
+      </select>
+    </header>
+    <nav class="entries home" aria-label="首次配置入口">
+      <button type="button" data-mode="custom" aria-pressed="false">自由选择配置<small>自己勾选需要的软件</small></button>
+      <button type="button" data-mode="wizard" aria-pressed="false">问卷推荐配置<small>回答问题，帮你选好软件</small></button>
+    </nav>
+    <section id="wizard" aria-label="选型问卷">
+      <div id="question-network">
+        <h2 tabindex="-1">1. 你的网络环境？</h2>
+        <div class="network-choices">
+          <button type="button" data-network="domestic">国内网络</button>
+          <button type="button" data-network="global">可访问海外服务</button>
+          <button type="button" data-network="offline">完全离线</button>
+        </div>
+      </div>
+      <div id="question-scenes" hidden>
+        <div class="question-heading"><h2 tabindex="-1">2. 你想用 AI 做什么？</h2><button type="button" id="back">上一步</button></div>
+        <div id="scenes" class="scenes" aria-label="选择用途"></div>
+        <p id="scene-note" class="hint" hidden></p>
+        <div class="question-actions"><span class="hint" id="scene-count">可多选</span><button type="button" id="generate" class="primary" disabled>生成推荐</button></div>
+      </div>
+      <div id="question-result" hidden>
+        <div class="question-heading"><h2 tabindex="-1">推荐工具</h2><button type="button" id="edit">修改答案</button></div>
+        <p class="hint" id="result-count"></p>
+      </div>
+    </section>
+    <section id="custom" aria-label="自由选择工具" hidden>
+    <div class="toolbar">
+      <input id="search" type="search" placeholder="搜索工具…" aria-label="搜索工具">
+      <select id="network" aria-label="网络环境">
+        <option value="domestic">国内网络</option>
+        <option value="global">可访问海外服务</option>
+        <option value="offline">完全离线</option>
+      </select>
+    </div>
+    <div id="filter-summary" class="filter-summary" hidden>
+      <span id="match-count" role="status"></span>
+      <button type="button" id="reset">显示全部</button>
+    </div>
+    </section>
+    <section id="list-panel" class="tool-list" aria-label="可选工具" tabindex="0" hidden>
+      <div id="tools"></div>
+      <p id="empty" class="empty" hidden>没有匹配的工具，试试其他搜索词或网络环境。</p>
+    </section>
+    <footer>
+      <details id="selection">
+        <summary>已选 <span id="count">0</span> 款</summary>
+        <div id="selected" class="selected"></div>
+        <button type="button" id="clear" hidden>清空</button>
+      </details>
+      <button type="button" id="review-plan" class="primary" disabled>确认配置方案</button>
+    </footer>
+    <section id="review" aria-label="确认配置方案" hidden>
+      <div class="question-heading"><h2 tabindex="-1">确认配置方案</h2><button type="button" id="review-back">返回修改</button></div>
+      <p id="review-context" class="hint"></p>
+      <ul id="configuration-list" class="configuration-list"></ul>
+      <p id="review-note" class="hint">在线版支持自动生成安装脚本（自动通过包管理器与 CLI 配置）；离线版需配合网盘完整包。</p>
+      <div class="question-actions"><button type="button" id="export">保存清单 (MD)</button><button type="button" id="auto-install" class="primary">生成一键安装脚本</button></div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; flex-wrap:wrap; gap:8px;">
+        <a id="console-preview" class="preview-link" href="console.html">预览安装后的控制台 →</a>
+        <a id="check-hardware-link" class="preview-link" href="../scripts/check-hardware.sh" download="check-hardware.sh">下载硬件体检工具 ⤓</a>
+      </div>
+    </section>
+    <p id="offline-note" class="hint" hidden>离线使用前，需备齐安装包、模型与运行时。</p>
+    <p id="notice" class="hint" role="status" aria-live="polite" hidden></p>
+    <noscript><p class="hint">请启用 JavaScript 后选择工具。</p></noscript>
+  </main>
+</body>
+</html>

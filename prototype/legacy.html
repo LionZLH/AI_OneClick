@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Station Pro - 桌面智能装机分发系统</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    /* 顶级桌面软件质感 */
+    body {
+      background: #06070a;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.18) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+        radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.5) 0px, transparent 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Segoe UI", sans-serif;
+    }
+
+    /* 拟真桌面客户端外壳 */
+    .app-window {
+      background: rgba(13, 15, 22, 0.85);
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 
+        0 0 0 1px rgba(0, 0, 0, 0.6),
+        0 25px 65px -10px rgba(0, 0, 0, 0.8),
+        0 0 40px rgba(37, 99, 235, 0.12);
+    }
+
+    /* 钛金微光质感卡片 */
+    .titanium-card {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.015) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .titanium-card:hover {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.03) 100%);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1.5px);
+    }
+    .titanium-card.selected {
+      background: linear-gradient(180deg, rgba(37, 99, 235, 0.22) 0%, rgba(30, 64, 175, 0.12) 100%);
+      border-color: #3b82f6;
+      box-shadow: 
+        inset 0 1px 0 rgba(255, 255, 255, 0.25),
+        0 8px 24px -4px rgba(37, 99, 235, 0.35);
+    }
+
+    /* 微型呼吸动效 */
+    .glow-dot {
+      box-shadow: 0 0 8px #10b981;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-100 flex items-center justify-center p-3 md:p-6 antialiased selection:bg-blue-500 selection:text-white">
+
+  <!-- 桌面窗口主体 (模拟独立 Client) -->
+  <div class="app-window w-full max-w-3xl rounded-2xl overflow-hidden flex flex-col">
+
+    <!-- 1. 窗口原生标题栏 (带 macOS 红黄绿玻璃按钮与系统状态) -->
+    <div class="h-11 bg-white/[0.03] border-b border-white/[0.08] px-4 flex items-center justify-between select-none">
+      <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5 mr-2">
+          <span class="w-3 h-3 rounded-full bg-[#ff5f57] border border-[#e0443e]/50 inline-block shadow-sm"></span>
+          <span class="w-3 h-3 rounded-full bg-[#febc2e] border border-[#d89e24]/50 inline-block shadow-sm"></span>
+          <span class="w-3 h-3 rounded-full bg-[#28c840] border border-[#1aab29]/50 inline-block shadow-sm"></span>
+        </div>
+        <span class="text-xs font-semibold tracking-wide text-slate-300 flex items-center gap-1.5">
+          <span class="text-blue-400 font-bold">AI Station</span>
+          <span class="text-[10px] text-slate-400 font-mono px-1.5 py-0.2 rounded bg-white/[0.06]">v2.6 Enterprise</span>
+        </span>
+      </div>
+
+      <!-- 右侧：硬件环境探测指示灯 (商业级仪式感) -->
+      <div class="hidden sm:flex items-center gap-3 text-[11px] text-slate-400">
+        <div class="flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 glow-dot"></span>
+          <span>独立沙盒环境</span>
+        </div>
+        <span class="text-white/10">|</span>
+        <div class="flex items-center gap-1.5">
+          <span class="text-blue-400">⚡</span>
+          <span>官方静默通道</span>
+        </div>
+        <span class="text-white/10">|</span>
+        <div class="flex items-center gap-1">
+          <span class="text-amber-400">🛡️</span>
+          <span>纯净免流氓捆绑</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. 二级导航与模式切换 -->
+    <div class="px-6 py-4 bg-white/[0.015] border-b border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div>
+        <h1 class="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+          大模型桌面客户端一键装机
+        </h1>
+        <p class="text-xs text-slate-400 mt-0.5">全量支持 20 款主流客户端 • 纯净官方正版分发 • 0 配置秒开</p>
+      </div>
+
+      <!-- 双模式切换 Tab -->
+      <div class="inline-flex rounded-xl bg-black/40 p-1 border border-white/[0.08] text-xs font-semibold">
+        <button id="tab-wizard" onclick="switchMode('wizard')" class="px-4 py-1.5 rounded-lg bg-blue-600 text-white shadow-md shadow-blue-600/30 transition-all flex items-center gap-1.5">
+          <span>🎯</span> 问卷智能匹配
+        </button>
+        <button id="tab-custom" onclick="switchMode('custom')" class="px-4 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all flex items-center gap-1.5">
+          <span>📋</span> 全量自选清单
+        </button>
+      </div>
+    </div>
+
+    <!-- 3. 内容工作区 -->
+    <div class="p-6 md:p-8 flex-1">
+
+      <!-- ================= 模式 A：问卷智能推荐向导 ================= -->
+      <div id="section-wizard" class="space-y-6">
+
+        <!-- Step 1: 网络选择 -->
+        <div id="w-q1" class="space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold text-blue-400 uppercase tracking-widest bg-blue-500/10 px-2.5 py-0.5 rounded-md border border-blue-500/20">Step 01 / 02</span>
+            <span class="text-xs text-slate-400">点击选项直接进入下一步</span>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-white tracking-tight">请确认您的主机网络环境</h2>
+            <p class="text-xs text-slate-400 mt-1">系统将依据物理网络边界筛选可用客户端，杜绝安装后因网络报错。</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+            <button onclick="pickNet('domestic')" class="titanium-card p-4 rounded-xl text-left flex flex-col justify-between group h-32">
+              <div>
+                <div class="flex items-center justify-between text-blue-400 mb-2">
+                  <span class="text-lg">🇨🇳</span>
+                  <span class="text-xs opacity-0 group-hover:opacity-100 transition-opacity">进入 →</span>
+                </div>
+                <div class="text-sm font-bold text-white">国内普通网络</div>
+                <div class="text-[11px] text-slate-400 mt-1 line-clamp-2">无需梯子直连，即装即用（DeepSeek、豆包、Kimi）</div>
+              </div>
+              <div class="text-[10px] text-emerald-400/80 font-mono">● 100% 极速通畅</div>
+            </button>
+
+            <button onclick="pickNet('global')" class="titanium-card p-4 rounded-xl text-left flex flex-col justify-between group h-32">
+              <div>
+                <div class="flex items-center justify-between text-indigo-400 mb-2">
+                  <span class="text-lg">🌐</span>
+                  <span class="text-xs opacity-0 group-hover:opacity-100 transition-opacity">进入 →</span>
+                </div>
+                <div class="text-sm font-bold text-white">具备科学上网</div>
+                <div class="text-[11px] text-slate-400 mt-1 line-clamp-2">拥有海外代理节点（ChatGPT、Claude、Perplexity）</div>
+              </div>
+              <div class="text-[10px] text-blue-400/80 font-mono">● 海外顶流解锁</div>
+            </button>
+
+            <button onclick="pickNet('offline')" class="titanium-card p-4 rounded-xl text-left flex flex-col justify-between group h-32">
+              <div>
+                <div class="flex items-center justify-between text-emerald-400 mb-2">
+                  <span class="text-lg">🔒</span>
+                  <span class="text-xs opacity-0 group-hover:opacity-100 transition-opacity">进入 →</span>
+                </div>
+                <div class="text-sm font-bold text-white">纯离线保密环境</div>
+                <div class="text-[11px] text-slate-400 mt-1 line-clamp-2">严禁联网外传，本地运行（预置本地大模型）</div>
+              </div>
+              <div class="text-[10px] text-purple-400/80 font-mono">● 绝对数据主权</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2: 场景多选 -->
+        <div id="w-q2" class="hidden space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold text-blue-400 uppercase tracking-widest bg-blue-500/10 px-2.5 py-0.5 rounded-md border border-blue-500/20">Step 02 / 02</span>
+            <button onclick="backToQ1()" class="text-xs text-slate-400 hover:text-white transition-colors">← 重选网络</button>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-white tracking-tight">勾选您需要的高频任务（支持多选）</h2>
+            <p class="text-xs text-slate-400 mt-1">算法将针对每一个勾选场景，挑选 1 款不可替代的行业天花板工具。</p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5 pt-1">
+            <button type="button" onclick="toggleScene('code', this)" class="scene-card titanium-card p-3 rounded-xl text-left flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <span class="text-base">💻</span>
+                <span class="text-xs font-bold text-white">写代码 / 智能体</span>
+              </div>
+              <div class="check-box w-4 h-4 rounded border border-white/20 flex items-center justify-center text-[10px] text-transparent transition-all">✓</div>
+            </button>
+
+            <button type="button" onclick="toggleScene('doc', this)" class="scene-card titanium-card p-3 rounded-xl text-left flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <span class="text-base">📑</span>
+                <span class="text-xs font-bold text-white">读长篇文档 / 研报</span>
+              </div>
+              <div class="check-box w-4 h-4 rounded border border-white/20 flex items-center justify-center text-[10px] text-transparent transition-all">✓</div>
+            </button>
+
+            <button type="button" onclick="toggleScene('meeting', this)" class="scene-card titanium-card p-3 rounded-xl text-left flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <span class="text-base">🎙️</span>
+                <span class="text-xs font-bold text-white">会议录音 / 纪要整理</span>
+              </div>
+              <div class="check-box w-4 h-4 rounded border border-white/20 flex items-center justify-center text-[10px] text-transparent transition-all">✓</div>
+            </button>
+
+            <button type="button" onclick="toggleScene('official', this)" class="scene-card titanium-card p-3 rounded-xl text-left flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <span class="text-base">🏛️</span>
+                <span class="text-xs font-bold text-white">体制内公文写作</span>
+              </div>
+              <div class="check-box w-4 h-4 rounded border border-white/20 flex items-center justify-center text-[10px] text-transparent transition-all">✓</div>
+            </button>
+
+            <button type="button" onclick="toggleScene('search', this)" class="scene-card titanium-card p-3 rounded-xl text-left flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <span class="text-base">🔍</span>
+                <span class="text-xs font-bold text-white">学术资料 / 深度搜索</span>
+              </div>
+              <div class="check-box w-4 h-4 rounded border border-white/20 flex items-center justify-center text-[10px] text-transparent transition-all">✓</div>
+            </button>
+
+            <button type="button" onclick="toggleScene('wechat', this)" class="scene-card titanium-card p-3 rounded-xl text-left flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <span class="text-base">💬</span>
+                <span class="text-xs font-bold text-white">搜公众号文章素材</span>
+              </div>
+              <div class="check-box w-4 h-4 rounded border border-white/20 flex items-center justify-center text-[10px] text-transparent transition-all">✓</div>
+            </button>
+
+            <button type="button" onclick="toggleScene('logic', this)" class="scene-card titanium-card p-3 rounded-xl text-left flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <span class="text-base">🧠</span>
+                <span class="text-xs font-bold text-white">数理推导 / 深度思考</span>
+              </div>
+              <div class="check-box w-4 h-4 rounded border border-white/20 flex items-center justify-center text-[10px] text-transparent transition-all">✓</div>
+            </button>
+
+            <button type="button" onclick="toggleScene('voice', this)" class="scene-card titanium-card p-3 rounded-xl text-left flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <span class="text-base">📞</span>
+                <span class="text-xs font-bold text-white">日常摸鱼 / 语音通话</span>
+              </div>
+              <div class="check-box w-4 h-4 rounded border border-white/20 flex items-center justify-center text-[10px] text-transparent transition-all">✓</div>
+            </button>
+
+            <button type="button" onclick="toggleScene('local_kb', this)" class="scene-card titanium-card p-3 rounded-xl text-left flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <span class="text-base">📚</span>
+                <span class="text-xs font-bold text-white">本地私有资料库问答</span>
+              </div>
+              <div class="check-box w-4 h-4 rounded border border-white/20 flex items-center justify-center text-[10px] text-transparent transition-all">✓</div>
+            </button>
+
+            <button type="button" onclick="toggleScene('local_llm', this)" class="scene-card titanium-card p-3 rounded-xl text-left flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <span class="text-base">⚡</span>
+                <span class="text-xs font-bold text-white">本地纯离线跑大模型</span>
+              </div>
+              <div class="check-box w-4 h-4 rounded border border-white/20 flex items-center justify-center text-[10px] text-transparent transition-all">✓</div>
+            </button>
+          </div>
+
+          <div class="pt-3">
+            <button onclick="showWizardResults()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2">
+              <span>⚡ 生成专属装备配置单</span> <span>→</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 3: 专属配置清单交付页 -->
+        <div id="w-result" class="hidden space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+            <div>
+              <div class="text-[11px] text-emerald-400 font-mono flex items-center gap-1.5 mb-0.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 glow-dot"></span>
+                <span>MATCHING COMPLETE • 互补去重完毕</span>
+              </div>
+              <h2 class="text-lg font-bold text-white">专属 AI 工具组合建议</h2>
+            </div>
+            <button onclick="resetWizard()" class="text-xs text-slate-400 hover:text-white transition-colors">
+              重新配置
+            </button>
+          </div>
+
+          <!-- 推荐卡片列表 -->
+          <div id="wizard-cards" class="space-y-2"></div>
+
+          <div class="pt-2">
+            <button onclick="runInstall('wizard-checkbox')" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-blue-600/30 transition-all">
+              🚀 立即执行一键静默安装（安装即用）
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ================= 模式 B：全量自选清单 ================= -->
+      <div id="section-custom" class="hidden space-y-6">
+        <div class="flex items-center justify-between text-xs text-slate-400 pb-2 border-b border-white/[0.06]">
+          <span>按分类自由勾选，所有软件均自带图形界面：</span>
+          <div class="space-x-3">
+            <button onclick="batchSelectCustom(true)" class="hover:text-white transition-colors">全部勾选</button>
+            <span class="text-white/20">|</span>
+            <button onclick="batchSelectCustom(false)" class="hover:text-white transition-colors">全部取消</button>
+          </div>
+        </div>
+
+        <div class="space-y-4 max-h-[420px] overflow-y-auto pr-1">
+          <div>
+            <div class="text-[11px] font-bold text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <span>🇨🇳</span> <span>国内免翻开箱王（普通宽带秒开，全功能免费）</span>
+            </div>
+            <div class="space-y-1.5" id="custom-group-domestic"></div>
+          </div>
+
+          <div class="pt-2">
+            <div class="text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <span>🌐</span> <span>海外大厂顶流旗舰（需科学上网环境）</span>
+            </div>
+            <div class="space-y-1.5" id="custom-group-global"></div>
+          </div>
+
+          <div class="pt-2">
+            <div class="text-[11px] font-bold text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <span>🔒</span> <span>本地离线大模型（内置模型权重，断网双击即开）</span>
+            </div>
+            <div class="space-y-1.5" id="custom-group-offline"></div>
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-white/[0.08] flex items-center justify-between gap-4">
+          <div class="text-xs text-slate-400">
+            已就绪 <span id="custom-selected-count" class="text-white font-bold font-mono">0</span> 款客户端
+          </div>
+          <button onclick="runInstall('custom-checkbox')" class="py-3 px-6 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-blue-600/30 transition-all">
+            开始批量安装选中的客户端
+          </button>
+        </div>
+      </div>
+
+      <!-- 模拟安装进度条卡片 -->
+      <div id="progress-box" class="hidden mt-6 p-4 rounded-xl bg-black/60 border border-white/10 space-y-2">
+        <div class="flex justify-between text-xs text-slate-300">
+          <span id="install-text">正在初始化独立沙盒环境...</span>
+          <span id="install-pct" class="font-mono text-blue-400 font-bold">0%</span>
+        </div>
+        <div class="w-full bg-white/[0.08] h-1.5 rounded-full overflow-hidden">
+          <div id="install-bar" class="bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-400 h-1.5 rounded-full transition-all duration-200" style="width: 0%"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 4. 底部安全认证背书栏 (商业软件装机包装感) -->
+    <div class="h-10 bg-black/60 border-t border-white/[0.06] px-6 flex items-center justify-between text-[11px] text-slate-400 select-none">
+      <div class="flex items-center gap-4">
+        <span>© 2026 AI Station Pro</span>
+        <span class="text-white/10">•</span>
+        <span>数字签名有效</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-emerald-400">● 官方原版 MD5 已校验</span>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // 软件数据库 (已干掉所有半成品，保证100%有GUI、双击即用)
+    const ALL_APPS = [
+      { id: "deepseek", group: "domestic", name: "DeepSeek 桌面版", vendor: "深度求索", desc: "数学难题、算法与思维链深度推理顶流", size: 120, defaultCheck: true },
+      { id: "doubao", group: "domestic", name: "豆包桌面版", vendor: "字节跳动", desc: "国内用户量第一，拟真实时语音通话聊天", size: 130, defaultCheck: true },
+      { id: "kimi", group: "domestic", name: "Kimi 桌面版", vendor: "月之暗面", desc: "长文本处理王者，几十万字研报快速解析", size: 125 },
+      { id: "yuanbao", group: "domestic", name: "腾讯元宝", vendor: "腾讯", desc: "独家深度联网检索微信公众号专业图文", size: 145 },
+      { id: "qianwen", group: "domestic", name: "通义千问", vendor: "阿里巴巴", desc: "会议录音实时转写，自动提炼纪要大纲", size: 135 },
+      { id: "zhipu", group: "domestic", name: "智谱清言", vendor: "智谱 AI", desc: "内置丰富的行业垂直智能体小助理", size: 150 },
+      { id: "spark", group: "domestic", name: "讯飞星火", vendor: "科大讯飞", desc: "体制内公文规范写作与高精度语音识别", size: 160 },
+      { id: "minimax", group: "domestic", name: "海螺 AI", vendor: "MiniMax", desc: "拟真情感有声朗读，小说推文配音", size: 130 },
+      { id: "trae", group: "domestic", name: "Trae 桌面版", vendor: "字节跳动", desc: "国内免翻直连的顶尖 AI 编程 IDE", size: 210 },
+
+      { id: "chatgpt", group: "global", name: "ChatGPT 官方桌面版", vendor: "OpenAI", desc: "全球认知度最高、生态完备的原生客户端", size: 180 },
+      { id: "claude", group: "global", name: "Claude 官方桌面版", vendor: "Anthropic", desc: "逻辑严谨、文笔典雅的长文天花板", size: 175 },
+      { id: "gemini", group: "global", name: "Google Gemini 桌面版", vendor: "Google", desc: "超大上下文容量，长音视频与长文直读", size: 85 },
+      { id: "perplexity", group: "global", name: "Perplexity 桌面版", vendor: "Perplexity", desc: "全球最强 AI 学术与研究搜索引擎", size: 140 },
+      { id: "antigravity", group: "global", name: "Antigravity", vendor: "Google DeepMind", desc: "新一代自主智能体编程工作台", size: 260 },
+      { id: "cursor", group: "global", name: "Cursor", vendor: "Anysphere", desc: "主流 AI 代码编辑器，完整兼容 VS Code", size: 240 },
+
+      { id: "anythingllm", group: "offline", name: "AnythingLLM 知识库", vendor: "开源精选", desc: "本地整盘资料离线知识库检索问答", size: 320 },
+      { id: "lmstudio", group: "offline", name: "LM Studio (自带Qwen模型)", vendor: "开箱即用", desc: "自带离线模型权重，断网双击直接开聊", size: 400 },
+      { id: "jan", group: "offline", name: "Jan 隐私客户端", vendor: "开源隐私", desc: "纯开源、数据 100% 存本地的客户端", size: 210 },
+      { id: "gpt4all", group: "offline", name: "GPT4All", vendor: "老机专属", desc: "为普通 CPU 优化的离线大模型客户端", size: 150 }
+    ];
+
+    const WIZARD_MAP = {
+      code:     { global: "antigravity", domestic: "trae", offline: "anythingllm" },
+      doc:      { global: "gemini", domestic: "kimi", offline: "anythingllm" },
+      meeting:  { global: "chatgpt", domestic: "qianwen", offline: "anythingllm" },
+      official: { global: "claude", domestic: "spark", offline: "anythingllm" },
+      search:   { global: "perplexity", domestic: "yuanbao", offline: "anythingllm" },
+      wechat:   { global: "yuanbao", domestic: "yuanbao", offline: "anythingllm" },
+      logic:    { global: "claude", domestic: "deepseek", offline: "lmstudio" },
+      voice:    { global: "chatgpt", domestic: "doubao", offline: "lmstudio" },
+      local_kb: { global: "anythingllm", domestic: "anythingllm", offline: "anythingllm" },
+      local_llm:{ global: "lmstudio", domestic: "lmstudio", offline: "lmstudio" }
+    };
+
+    let wizardNet = "domestic";
+    let wizardScenes = new Set();
+
+    function initCustomList() {
+      const gGlobal = document.getElementById('custom-group-global');
+      const gDomestic = document.getElementById('custom-group-domestic');
+      const gOffline = document.getElementById('custom-group-offline');
+
+      ALL_APPS.forEach(app => {
+        const itemHtml = `
+          <div class="titanium-card p-3 rounded-xl flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" ${app.defaultCheck ? 'checked' : ''} onchange="updateCustomCount()" value="${app.id}" class="custom-checkbox w-4 h-4 rounded text-blue-600 bg-white/[0.08] border-white/20 cursor-pointer">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-bold text-white">${app.name}</span>
+                  <span class="text-[10px] text-slate-400 border border-white/10 px-1.5 py-0.2 rounded">${app.vendor}</span>
+                </div>
+                <div class="text-[11px] text-slate-400 mt-0.5">${app.desc}</div>
+              </div>
+            </div>
+            <span class="text-xs text-slate-400 font-mono">${app.size}M</span>
+          </div>
+        `;
+
+        if (app.group === "global") gGlobal.innerHTML += itemHtml;
+        else if (app.group === "domestic") gDomestic.innerHTML += itemHtml;
+        else if (app.group === "offline") gOffline.innerHTML += itemHtml;
+      });
+
+      updateCustomCount();
+    }
+
+    function switchMode(mode) {
+      const tabW = document.getElementById('tab-wizard');
+      const tabC = document.getElementById('tab-custom');
+      const secW = document.getElementById('section-wizard');
+      const secC = document.getElementById('section-custom');
+      document.getElementById('progress-box').classList.add('hidden');
+
+      if (mode === 'wizard') {
+        tabW.className = "px-4 py-1.5 rounded-lg bg-blue-600 text-white shadow-md shadow-blue-600/30 transition-all flex items-center gap-1.5";
+        tabC.className = "px-4 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all flex items-center gap-1.5";
+        secW.classList.remove('hidden');
+        secC.classList.add('hidden');
+      } else {
+        tabC.className = "px-4 py-1.5 rounded-lg bg-blue-600 text-white shadow-md shadow-blue-600/30 transition-all flex items-center gap-1.5";
+        tabW.className = "px-4 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all flex items-center gap-1.5";
+        secC.classList.remove('hidden');
+        secW.classList.add('hidden');
+      }
+    }
+
+    function pickNet(net) {
+      wizardNet = net;
+      document.getElementById('w-q1').classList.add('hidden');
+      document.getElementById('w-q2').classList.remove('hidden');
+    }
+
+    function backToQ1() {
+      document.getElementById('w-q2').classList.add('hidden');
+      document.getElementById('w-q1').classList.remove('hidden');
+    }
+
+    function toggleScene(key, btn) {
+      const box = btn.querySelector('.check-box');
+      if (wizardScenes.has(key)) {
+        wizardScenes.delete(key);
+        btn.classList.remove('selected');
+        box.classList.remove('bg-blue-600', 'border-blue-500', 'text-white');
+        box.classList.add('text-transparent', 'border-white/20');
+      } else {
+        wizardScenes.add(key);
+        btn.classList.add('selected');
+        box.classList.add('bg-blue-600', 'border-blue-500', 'text-white');
+        box.classList.remove('text-transparent', 'border-white/20');
+      }
+    }
+
+    function showWizardResults() {
+      if (wizardScenes.size === 0) {
+        alert("请至少点选一个日常场景！");
+        return;
+      }
+
+      document.getElementById('w-q2').classList.add('hidden');
+      document.getElementById('w-result').classList.remove('hidden');
+
+      const cardBox = document.getElementById('wizard-cards');
+      cardBox.innerHTML = '';
+
+      const matchedIds = new Set();
+      wizardScenes.forEach(sc => {
+        const appId = WIZARD_MAP[sc][wizardNet];
+        if (appId) matchedIds.add(appId);
+      });
+
+      matchedIds.forEach(id => {
+        const app = ALL_APPS.find(a => a.id === id);
+        if (app) {
+          cardBox.innerHTML += `
+            <div class="titanium-card p-3 rounded-xl flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <input type="checkbox" checked value="${app.id}" class="wizard-checkbox w-4 h-4 rounded text-blue-600 bg-white/[0.08] border-white/20 cursor-pointer">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-white">${app.name}</span>
+                    <span class="text-[10px] text-slate-400 border border-white/10 px-1.5 py-0.2 rounded">${app.vendor}</span>
+                  </div>
+                  <div class="text-[11px] text-slate-400 mt-0.5">${app.desc}</div>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      });
+    }
+
+    function resetWizard() {
+      wizardScenes.clear();
+      document.querySelectorAll('.scene-card').forEach(b => {
+        b.classList.remove('selected');
+        const box = b.querySelector('.check-box');
+        box.classList.remove('bg-blue-600', 'border-blue-500', 'text-white');
+        box.classList.add('text-transparent', 'border-white/20');
+      });
+      document.getElementById('w-result').classList.add('hidden');
+      document.getElementById('w-q1').classList.remove('hidden');
+      document.getElementById('progress-box').classList.add('hidden');
+    }
+
+    function batchSelectCustom(checkAll) {
+      document.querySelectorAll('.custom-checkbox').forEach(cb => cb.checked = checkAll);
+      updateCustomCount();
+    }
+
+    function updateCustomCount() {
+      const cnt = document.querySelectorAll('.custom-checkbox:checked').length;
+      document.getElementById('custom-selected-count').textContent = cnt;
+    }
+
+    function runInstall(checkboxClass) {
+      const selected = document.querySelectorAll(`.${checkboxClass}:checked`);
+      if (selected.length === 0) {
+        alert("请至少勾选一款需要安装的客户端！");
+        return;
+      }
+
+      const pBox = document.getElementById('progress-box');
+      const bar = document.getElementById('install-bar');
+      const num = document.getElementById('install-pct');
+      const txt = document.getElementById('install-text');
+
+      pBox.classList.remove('hidden');
+      let p = 0;
+
+      const t = setInterval(() => {
+        p += 10;
+        if (p > 100) p = 100;
+        bar.style.width = p + '%';
+        num.textContent = p + '%';
+        txt.textContent = `正在静默部署选中程序 (${p}%)...`;
+
+        if (p >= 100) {
+          clearInterval(t);
+          txt.textContent = "✓ 安装完成！所有选中软件的桌面图标已生成，双击即可开聊。";
+          txt.className = "text-emerald-400 font-bold";
+        }
+      }, 90);
+    }
+
+    initCustomList();
+  </script>
+</body>
+</html>
