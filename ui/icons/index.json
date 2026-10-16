@@ -7,6 +7,10 @@
   "full": false,
   "source": "https://anythingllm.com/icon.png?0a59f488e9ddf54c"
  },
+ "ardot": {
+  "full": false,
+  "source": "https://ardot.tencent.com/apple-touch-icon.png"
+ },
  "chatglm": {
   "full": false,
   "source": "https://chatglm.cn/favicon.ico"
@@ -47,6 +51,10 @@
   "full": true,
   "source": "https://www.nomic.ai/favicon.svg"
  },
+ "hailuo": {
+  "full": false,
+  "source": "https://cdn.hailuoai.com/hailuo-video-web/public_assets/favicon.png"
+ },
  "jan": {
   "full": false,
   "source": "https://www.jan.ai/favicon.ico"
@@ -63,6 +71,10 @@
   "full": true,
   "source": "https://www.kimi.com/pwa-192.png"
  },
+ "kling": {
+  "full": true,
+  "source": "https://klingai.kuaishou.com/logo-180x180.png"
+ },
  "lmstudio": {
   "full": false,
   "source": "https://lmstudio.ai/assets/marketing/logo-192x192.png"
@@ -70,6 +82,14 @@
  "metaso": {
   "full": false,
   "source": "https://metaso.cn/apple-touch-icon.png"
+ },
+ "notion": {
+  "full": false,
+  "source": "https://www.notion.so/front-static/logo-ios.png"
+ },
+ "obsidian": {
+  "full": false,
+  "source": "https://obsidian.md/favicon.svg"
  },
  "ollama": {
   "full": false,
@@ -86,6 +106,10 @@
  "trae": {
   "full": true,
   "source": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/trae_website_prod_cn/favicon.png"
+ },
+ "workbuddy": {
+  "full": false,
+  "source": "https://assets.workbuddy.cn/web/workbuddy/daac9bf302cf5c49ed526cd2c65d433b3dc11a77/assets/logo.svg"
  },
  "wps": {
   "full": false,

@@ -55,6 +55,12 @@ KNOWN_ICONS = {
     "trae": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/trae_website_prod_cn/favicon.png",
     "perplexity": "https://www.perplexity.ai/apple-touch-icon.png",
     "chatgpt": "https://cdn.oaistatic.com/_next/static/media/apple-touch-icon.82af6fe1.png",
+    "kling": "https://klingai.kuaishou.com/logo-180x180.png",
+    "hailuo": "https://cdn.hailuoai.com/hailuo-video-web/public_assets/favicon.png",
+    "notion": "https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/notion.png",
+    "obsidian": "https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/obsidian.png",
+    "workbuddy": "https://assets.workbuddy.cn/web/workbuddy/daac9bf302cf5c49ed526cd2c65d433b3dc11a77/assets/logo.svg",
+    "ardot": "https://ardot.tencent.com/apple-touch-icon.png",
 }
 
 

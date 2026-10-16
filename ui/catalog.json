@@ -420,6 +420,106 @@
       "install": { "source": "winget", "id": "kangfenmao.CherryStudio" },
       "detect": { "displayName": "^Cherry Studio", "exe": ["Cherry Studio.exe"] },
       "offline": { "match": ["cherry-studio", "cherrystudio"], "installerType": "nullsoft" }
+    },
+    {
+      "id": "kling", "name": "可灵 AI", "vendor": "快手", "kind": "web", "region": "cn",
+      "pricing": "freemium", "account": "phone", "pricingNote": "每日赠送免费灵感值，有会员与算力包",
+      "letter": "可", "color": "#ff4d4f",
+      "summary": "快手顶尖视频生成与多模态大模型，文生视频、图生视频与运镜控制表现优异。",
+      "scores": { "create": 3, "chat": 1 },
+      "why": {
+        "create": "国内第一梯队 AI 视频生成大模型，动态自然、画质细腻、镜头控制丰富"
+      },
+      "notes": ["网页端开箱即用，支持手机号/微信扫码登录", "每日免费赠送灵感值可供体验视频生成"],
+      "homepage": "https://klingai.kuaishou.com",
+      "webUrl": "https://klingai.kuaishou.com",
+      "install": { "source": "web" }
+    },
+    {
+      "id": "hailuo", "name": "海螺 AI", "vendor": "MiniMax", "kind": "web", "region": "cn",
+      "pricing": "freemium", "account": "phone", "pricingNote": "基础功能免费，支持视频生成与语音朗读",
+      "letter": "螺", "color": "#ff6b4a",
+      "summary": "MiniMax 旗下全能助手：搭载 Video-01 影视级视频大模型与拟真情感语音。",
+      "scores": { "create": 3, "chat": 2, "voice": 2, "search": 2 },
+      "why": {
+        "create": "搭载 MiniMax Video-01 视频模型，影视质感出色、运镜流畅",
+        "chat": "综合问答能力扎实，支持网页与长文档解读",
+        "voice": "语音朗读富有情感，拟真度高，适合听书与小说推文",
+        "search": "支持联网快速检索最新资讯"
+      },
+      "notes": ["网页端直接使用，支持微信或手机号一键登录"],
+      "homepage": "https://hailuoai.com",
+      "webUrl": "https://hailuoai.com",
+      "install": { "source": "web" }
+    },
+    {
+      "id": "notion", "name": "Notion", "vendor": "Notion Labs", "kind": "desktop", "region": "global",
+      "pricing": "freemium", "account": "optional", "pricingNote": "基础版免费，Notion AI 功能按需订阅或试用",
+      "letter": "N", "color": "#000000",
+      "summary": "全球顶流知识库与协作工作台，内置 Notion AI 文档写作、摘要提炼与多维表格问答。",
+      "scores": { "docs": 3, "office": 3, "chat": 2 },
+      "why": {
+        "docs": "结构化笔记、文档沉淀与知识库管理天花板",
+        "office": "看板、多维数据表、任务跟踪与团队协同办公",
+        "chat": "Notion AI 原生集成在文档与表格中，随处呼出协助写作"
+      },
+      "notes": ["支持通过 winget 一键静默安装", "海外服务，注册与使用需要能访问海外服务的网络"],
+      "homepage": "https://www.notion.so/zh-cn/desktop",
+      "install": { "source": "winget", "id": "Notion.Notion" },
+      "detect": { "displayName": "^Notion", "exe": ["Notion.exe"] },
+      "offline": { "match": ["notion"], "installerType": "nullsoft" }
+    },
+    {
+      "id": "obsidian", "name": "Obsidian", "vendor": "Dynalist", "kind": "desktop", "region": "local",
+      "pricing": "free", "account": "none", "pricingNote": "个人完全免费，数据 100% 存储于本地",
+      "letter": "O", "color": "#7c3aed",
+      "summary": "隐私优先的本地双链知识库，可通过社区插件直连 Ollama / 本地大模型打造离线第二大脑。",
+      "scores": { "private": 3, "docs": 3, "office": 2 },
+      "why": {
+        "private": "纯本地 Markdown 文件，100% 隐私安全，不联网也能完全正常运行",
+        "docs": "双向链接、知识图谱与海量笔记深度组织",
+        "office": "支持大纲、白板 Canvas、看板与丰富工作流扩展"
+      },
+      "notes": ["个人免费，支持通过 winget 一键静默安装", "搭配 Copilot / Text Generator 插件可直连本地 Ollama 或在线 API"],
+      "homepage": "https://obsidian.md",
+      "install": { "source": "winget", "id": "Obsidian.Obsidian" },
+      "detect": { "displayName": "^Obsidian", "exe": ["Obsidian.exe"] },
+      "requires": { "ramGB": 8, "avx2": false },
+      "offline": { "match": ["obsidian"], "installerType": "nullsoft" }
+    },
+    {
+      "id": "workbuddy", "name": "腾讯 WorkBuddy", "vendor": "腾讯", "kind": "desktop", "region": "cn",
+      "pricing": "freemium", "account": "phone", "pricingNote": "支持微信/企业微信一键登录，个人基础功能免费",
+      "letter": "W", "color": "#0ec8a9",
+      "summary": "腾讯出品的全场景职场 AI 智能体桌面工作台，多 Agent 协同自主规划并交付工作汇报与文档。",
+      "scores": { "office": 3, "chat": 2, "docs": 2, "code": 2 },
+      "why": {
+        "office": "多 Agent 协作动手干活，自动生成研报、PPT、表格等可直接验收的成果",
+        "chat": "腾讯混元模型与多智能体工作台，一句话下达复杂任务",
+        "docs": "支持本地 Word/Excel/PPT/PDF 直接打开、解析与深度提问",
+        "code": "内置代码助手与技能扩展，辅助日常自动化脚本与程序开发"
+      },
+      "notes": ["支持 Windows 桌面客户端与微信扫码登录", "与企业微信生态深度融合，支持本地多种办公格式文件"],
+      "homepage": "https://www.workbuddy.cn",
+      "install": { "source": "manual" },
+      "detect": { "displayName": "^(WorkBuddy|腾讯WorkBuddy)", "exe": ["WorkBuddy.exe", "workbuddy.exe"] },
+      "offline": { "match": ["workbuddy"], "installerType": "nullsoft" }
+    },
+    {
+      "id": "ardot", "name": "腾讯 Ardot", "vendor": "腾讯", "kind": "web", "region": "cn",
+      "pricing": "freemium", "account": "phone", "pricingNote": "腾讯设计出品，微信一键登录，基础功能免费",
+      "letter": "A", "color": "#2563eb",
+      "summary": "腾讯 AI 原生设计与产设研协作平台：文本一键生成矢量 UI 原型、智能图像分层并打通前端代码导出。",
+      "scores": { "create": 3, "code": 2, "office": 2 },
+      "why": {
+        "create": "输入一句话由 AI 实时生成高保真矢量 UI 原型、App 界面与运营页面",
+        "code": "打通 Design-to-Code 与 MCP 协议，支持一键将设计稿导出为前端代码",
+        "office": "兼容 Figma 格式导入，支持多人实时在线协作评审"
+      },
+      "notes": ["网页端即开即用，微信扫码一键登录", "支持将设计稿通过 MCP 协议与 Cursor / Claude / TRAE 等 IDE 联动"],
+      "homepage": "https://ardot.tencent.com",
+      "webUrl": "https://ardot.tencent.com",
+      "install": { "source": "web" }
     }
   ]
 }
