@@ -85,7 +85,7 @@
  },
  "notion": {
   "full": false,
-  "source": "https://www.notion.so/front-static/logo-ios.png"
+  "source": "https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/notion.png"
  },
  "obsidian": {
   "full": false,
