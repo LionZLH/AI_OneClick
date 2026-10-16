@@ -6,3 +6,8 @@ node_modules/
 .env.*
 dist/
 test-results/
+
+# 绿色版运行时在 exe 旁边生成的数据（配置、日志、界面缓存）
+AIStation-data/
+# build.cmd 复制到根目录的程序，便于本地双击运行；发布请用 Releases
+/AIStation.exe

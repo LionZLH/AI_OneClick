@@ -105,3 +105,18 @@ test('网络探测结果映射到问卷默认选项', () => {
   assert.strictEqual(R.guessNetwork({ cn: false, global: false }), 'offline');
   assert.strictEqual(R.guessNetwork(null), null);
 });
+
+test('读文档 + 写代码（国内、省心）推荐 Kimi 和 TRAE，不会被综合办公工具替代', () => {
+  const r = R.recommend(catalog, { needs: ['docs', 'code'], network: 'cn', priority: 'easy' }, HW16);
+  assert.deepStrictEqual(ids(r).sort(), ['kimi', 'trae']);
+});
+
+test('本地私有 + 读文档时推荐真正的本地 AI，而不是只推笔记软件', () => {
+  for (const network of ['offline', 'cn']) {
+    for (const priority of ['easy', 'private']) {
+      const r = R.recommend(catalog, { needs: ['private', 'docs'], network, priority }, HW16);
+      assert.ok(ids(r).some((id) => ['lmstudio', 'gpt4all', 'anythingllm', 'ollama', 'jan'].includes(id)), `${network}/${priority}: ${ids(r)}`);
+      assert.notDeepStrictEqual(ids(r), ['obsidian'], `${network}/${priority}`);
+    }
+  }
+});

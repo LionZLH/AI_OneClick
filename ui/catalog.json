@@ -98,6 +98,7 @@
       },
       "notes": ["需要登录账号"],
       "homepage": "https://www.qianwen.com",
+      "iconUrl": "https://img.alicdn.com/imgextra/i2/O1CN01taBbMS1CfyJoOt0lB_!!6000000000109-2-tps-80-80.png",
       "install": { "source": "winget", "id": "Alibaba.Qianwen" },
       "detect": { "displayName": "^(千问|通义|Qianwen|Tongyi)", "exe": ["Qianwen.exe", "Tongyi.exe", "qwenclient.exe"] },
       "offline": { "match": ["qwenclient", "qianwen"], "installerType": "nullsoft" }
@@ -143,6 +144,7 @@
       "why": { "code": "用自然语言让 AI 写代码、改 bug、搭项目，界面中文" },
       "notes": ["基于 VS Code，适合有一点编程基础的用户", "需要登录账号"],
       "homepage": "https://www.trae.cn",
+      "iconUrl": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/trae_website_prod_cn/favicon.png",
       "install": { "source": "winget", "id": "ByteDance.Trae.CN" },
       "detect": { "displayName": "^Trae CN", "exe": ["Trae CN.exe"] },
       "offline": { "match": ["trae_cn", "trae-cn", "traecn"], "installerType": "inno" }
@@ -219,6 +221,7 @@
       },
       "notes": ["需要能访问 OpenAI 服务的网络和账号", "通过 Microsoft Store 安装"],
       "homepage": "https://chatgpt.com/download",
+      "iconUrl": "https://cdn.oaistatic.com/_next/static/media/apple-touch-icon.82af6fe1.png",
       "install": { "source": "msstore", "id": "9NT1R1C2HH7J" },
       "detect": { "displayName": "^ChatGPT", "pfn": "OpenAI.ChatGPT-Desktop_2p2nqsd0c76g0" },
       "offline": null
@@ -287,6 +290,7 @@
       "why": { "search": "答案逐句标注来源，适合严肃的资料调研" },
       "notes": ["网页版", "需要能访问海外服务的网络"],
       "homepage": "https://www.perplexity.ai",
+      "iconUrl": "https://www.perplexity.ai/apple-touch-icon.png",
       "webUrl": "https://www.perplexity.ai",
       "install": { "source": "web" },
       "detect": {}
@@ -423,102 +427,100 @@
     },
     {
       "id": "kling", "name": "可灵 AI", "vendor": "快手", "kind": "web", "region": "cn",
-      "pricing": "freemium", "account": "phone", "pricingNote": "每日赠送免费灵感值，有会员与算力包",
+      "pricing": "freemium", "account": "phone", "pricingNote": "每日赠送免费额度，更多次数需会员或算力包",
       "letter": "可", "color": "#ff4d4f",
-      "summary": "快手顶尖视频生成与多模态大模型，文生视频、图生视频与运镜控制表现优异。",
-      "scores": { "create": 3, "chat": 1 },
+      "summary": "快手的 AI 视频生成平台，支持文字生成视频、图片生成视频。",
+      "scores": { "create": 3 },
       "why": {
-        "create": "国内第一梯队 AI 视频生成大模型，动态自然、画质细腻、镜头控制丰富"
+        "create": "输入文字或上传图片就能生成短视频，可以控制镜头运动"
       },
-      "notes": ["网页端开箱即用，支持手机号/微信扫码登录", "每日免费赠送灵感值可供体验视频生成"],
+      "notes": ["网页版，添加后从这里一键打开", "生成次数有每日额度"],
       "homepage": "https://klingai.kuaishou.com",
       "webUrl": "https://klingai.kuaishou.com",
+      "iconUrl": "https://klingai.kuaishou.com/logo-180x180.png",
       "install": { "source": "web" }
     },
     {
       "id": "hailuo", "name": "海螺 AI", "vendor": "MiniMax", "kind": "web", "region": "cn",
-      "pricing": "freemium", "account": "phone", "pricingNote": "基础功能免费，支持视频生成与语音朗读",
+      "pricing": "freemium", "account": "phone", "pricingNote": "基础功能免费，视频生成有额度限制",
       "letter": "螺", "color": "#ff6b4a",
-      "summary": "MiniMax 旗下全能助手：搭载 Video-01 影视级视频大模型与拟真情感语音。",
-      "scores": { "create": 3, "chat": 2, "voice": 2, "search": 2 },
+      "summary": "MiniMax 的 AI 助手，可以生成视频，也能对话和朗读文字。",
+      "scores": { "create": 3, "chat": 2, "voice": 2 },
       "why": {
-        "create": "搭载 MiniMax Video-01 视频模型，影视质感出色、运镜流畅",
-        "chat": "综合问答能力扎实，支持网页与长文档解读",
-        "voice": "语音朗读富有情感，拟真度高，适合听书与小说推文",
-        "search": "支持联网快速检索最新资讯"
+        "create": "可以用文字或图片生成短视频",
+        "chat": "日常问答和写作",
+        "voice": "朗读声音自然，适合听文章、做配音"
       },
-      "notes": ["网页端直接使用，支持微信或手机号一键登录"],
+      "notes": ["网页版，添加后从这里一键打开", "视频生成有每日额度"],
       "homepage": "https://hailuoai.com",
       "webUrl": "https://hailuoai.com",
+      "iconUrl": "https://cdn.hailuoai.com/hailuo-video-web/public_assets/favicon.png",
       "install": { "source": "web" }
     },
     {
       "id": "notion", "name": "Notion", "vendor": "Notion Labs", "kind": "desktop", "region": "global",
-      "pricing": "freemium", "account": "optional", "pricingNote": "基础版免费，Notion AI 功能按需订阅或试用",
+      "pricing": "freemium", "account": "overseas", "pricingNote": "个人基础版免费，Notion AI 需订阅",
       "letter": "N", "color": "#000000",
-      "summary": "全球顶流知识库与协作工作台，内置 Notion AI 文档写作、摘要提炼与多维表格问答。",
-      "scores": { "docs": 3, "office": 3, "chat": 2 },
+      "summary": "笔记、文档和知识库工具，内置 Notion AI 帮你写作和总结。",
+      "scores": { "docs": 2, "office": 2, "chat": 1 },
       "why": {
-        "docs": "结构化笔记、文档沉淀与知识库管理天花板",
-        "office": "看板、多维数据表、任务跟踪与团队协同办公",
-        "chat": "Notion AI 原生集成在文档与表格中，随处呼出协助写作"
+        "docs": "整理笔记和资料，Notion AI 可以总结页面内容",
+        "office": "文档、表格、看板放在一起，适合个人和团队管理工作"
       },
-      "notes": ["支持通过 winget 一键静默安装", "海外服务，注册与使用需要能访问海外服务的网络"],
-      "homepage": "https://www.notion.so/zh-cn/desktop",
+      "notes": ["需要注册 Notion 账号，访问速度受网络影响", "AI 功能需要订阅"],
+      "homepage": "https://www.notion.com/desktop",
+      "iconUrl": "https://www.notion.so/images/logo-ios.png",
       "install": { "source": "winget", "id": "Notion.Notion" },
-      "detect": { "displayName": "^Notion", "exe": ["Notion.exe"] },
+      "detect": { "displayName": "^Notion$", "exe": ["Notion.exe"] },
       "offline": { "match": ["notion"], "installerType": "nullsoft" }
     },
     {
       "id": "obsidian", "name": "Obsidian", "vendor": "Dynalist", "kind": "desktop", "region": "local",
-      "pricing": "free", "account": "none", "pricingNote": "个人完全免费，数据 100% 存储于本地",
+      "pricing": "free", "account": "none", "pricingNote": "个人使用免费",
       "letter": "O", "color": "#7c3aed",
-      "summary": "隐私优先的本地双链知识库，可通过社区插件直连 Ollama / 本地大模型打造离线第二大脑。",
-      "scores": { "private": 3, "docs": 3, "office": 2 },
+      "summary": "笔记都保存在自己电脑上的知识库软件；配合插件可以接入本地模型。",
+      "scores": { "docs": 2, "private": 1, "office": 1 },
       "why": {
-        "private": "纯本地 Markdown 文件，100% 隐私安全，不联网也能完全正常运行",
-        "docs": "双向链接、知识图谱与海量笔记深度组织",
-        "office": "支持大纲、白板 Canvas、看板与丰富工作流扩展"
+        "docs": "笔记是保存在本机的文件，不联网也能用；用双向链接整理资料"
       },
-      "notes": ["个人免费，支持通过 winget 一键静默安装", "搭配 Copilot / Text Generator 插件可直连本地 Ollama 或在线 API"],
+      "notes": ["本身是笔记软件，AI 功能需要另装社区插件并搭配本地模型或在线 API"],
       "homepage": "https://obsidian.md",
       "install": { "source": "winget", "id": "Obsidian.Obsidian" },
       "detect": { "displayName": "^Obsidian", "exe": ["Obsidian.exe"] },
-      "requires": { "ramGB": 8, "avx2": false },
+      "requires": { "ramGB": 4, "avx2": false },
       "offline": { "match": ["obsidian"], "installerType": "nullsoft" }
     },
     {
       "id": "workbuddy", "name": "腾讯 WorkBuddy", "vendor": "腾讯", "kind": "desktop", "region": "cn",
-      "pricing": "freemium", "account": "phone", "pricingNote": "支持微信/企业微信一键登录，个人基础功能免费",
+      "pricing": "freemium", "account": "phone", "pricingNote": "个人基础功能免费",
       "letter": "W", "color": "#0ec8a9",
-      "summary": "腾讯出品的全场景职场 AI 智能体桌面工作台，多 Agent 协同自主规划并交付工作汇报与文档。",
-      "scores": { "office": 3, "chat": 2, "docs": 2, "code": 2 },
+      "summary": "腾讯的桌面办公智能体，交代任务后可以帮你整理资料、生成文档和表格。",
+      "scores": { "office": 3, "docs": 2, "chat": 2, "code": 1 },
       "why": {
-        "office": "多 Agent 协作动手干活，自动生成研报、PPT、表格等可直接验收的成果",
-        "chat": "腾讯混元模型与多智能体工作台，一句话下达复杂任务",
-        "docs": "支持本地 Word/Excel/PPT/PDF 直接打开、解析与深度提问",
-        "code": "内置代码助手与技能扩展，辅助日常自动化脚本与程序开发"
+        "office": "一句话交代任务，帮你生成报告、表格和 PPT 初稿",
+        "docs": "可以读取本地 Word、Excel、PDF 等文件并回答问题",
+        "chat": "日常问答和写作"
       },
-      "notes": ["支持 Windows 桌面客户端与微信扫码登录", "与企业微信生态深度融合，支持本地多种办公格式文件"],
-      "homepage": "https://www.workbuddy.cn",
-      "install": { "source": "manual" },
-      "detect": { "displayName": "^(WorkBuddy|腾讯WorkBuddy)", "exe": ["WorkBuddy.exe", "workbuddy.exe"] },
+      "notes": ["需要登录（支持微信扫码）"],
+      "homepage": "https://copilot.tencent.com/work/",
+      "iconUrl": "https://assets.workbuddy.cn/web/workbuddy/daac9bf302cf5c49ed526cd2c65d433b3dc11a77/assets/logo.svg",
+      "install": { "source": "winget", "id": "Tencent.WorkBuddy" },
+      "detect": { "displayName": "^(WorkBuddy|腾讯 ?WorkBuddy)", "exe": ["WorkBuddy.exe"] },
       "offline": { "match": ["workbuddy"], "installerType": "nullsoft" }
     },
     {
       "id": "ardot", "name": "腾讯 Ardot", "vendor": "腾讯", "kind": "web", "region": "cn",
-      "pricing": "freemium", "account": "phone", "pricingNote": "腾讯设计出品，微信一键登录，基础功能免费",
+      "pricing": "freemium", "account": "phone", "pricingNote": "基础功能免费",
       "letter": "A", "color": "#2563eb",
-      "summary": "腾讯 AI 原生设计与产设研协作平台：文本一键生成矢量 UI 原型、智能图像分层并打通前端代码导出。",
-      "scores": { "create": 3, "code": 2, "office": 2 },
+      "summary": "腾讯的 AI 设计平台，用文字描述就能生成界面和海报设计稿。",
+      "scores": { "create": 2, "office": 1 },
       "why": {
-        "create": "输入一句话由 AI 实时生成高保真矢量 UI 原型、App 界面与运营页面",
-        "code": "打通 Design-to-Code 与 MCP 协议，支持一键将设计稿导出为前端代码",
-        "office": "兼容 Figma 格式导入，支持多人实时在线协作评审"
+        "create": "描述想要的页面或海报，AI 生成可继续编辑的设计稿"
       },
-      "notes": ["网页端即开即用，微信扫码一键登录", "支持将设计稿通过 MCP 协议与 Cursor / Claude / TRAE 等 IDE 联动"],
+      "notes": ["网页版，添加后从这里一键打开", "需要登录（支持微信扫码）"],
       "homepage": "https://ardot.tencent.com",
       "webUrl": "https://ardot.tencent.com",
+      "iconUrl": "https://ardot.tencent.com/apple-touch-icon.png",
       "install": { "source": "web" }
     }
   ]

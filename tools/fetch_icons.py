@@ -4,8 +4,8 @@
 由 GitHub Actions（.github/workflows/icons.yml）运行：目录变化时自动更新图标并提交。
 本地运行：pip install pillow cairosvg && python tools/fetch_icons.py
 
-图标来源优先级：catalog.json 中的 iconUrl > 网页里声明的 SVG 图标 > 最大的位图图标
-（apple-touch-icon / icon 链接 / favicon.ico）。图标仅用于在启动器中标识对应软件。
+图标来源优先级：catalog.json 中的 iconUrl（只填官方地址）> 网页里声明的 SVG 图标 > 最大的位图图标
+（apple-touch-icon / icon 链接 / favicon.ico）。这次抓不到的保留上次的图标。图标仅用于在启动器中标识对应软件。
 """
 import io
 import json
@@ -50,20 +50,6 @@ class LinkParser(HTMLParser):
             self.icons.append((rel, a["href"], a.get("sizes", ""), a.get("type", "")))
 
 
-KNOWN_ICONS = {
-    "qianwen": "https://img.alicdn.com/imgextra/i2/O1CN01taBbMS1CfyJoOt0lB_!!6000000000109-2-tps-80-80.png",
-    "trae": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/trae_website_prod_cn/favicon.png",
-    "perplexity": "https://www.perplexity.ai/apple-touch-icon.png",
-    "chatgpt": "https://cdn.oaistatic.com/_next/static/media/apple-touch-icon.82af6fe1.png",
-    "kling": "https://klingai.kuaishou.com/logo-180x180.png",
-    "hailuo": "https://cdn.hailuoai.com/hailuo-video-web/public_assets/favicon.png",
-    "notion": "https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/notion.png",
-    "obsidian": "https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/obsidian.png",
-    "workbuddy": "https://assets.workbuddy.cn/web/workbuddy/daac9bf302cf5c49ed526cd2c65d433b3dc11a77/assets/logo.svg",
-    "ardot": "https://ardot.tencent.com/apple-touch-icon.png",
-}
-
-
 def candidates(app):
     seen, out = set(), []
 
@@ -72,8 +58,6 @@ def candidates(app):
             seen.add(url)
             out.append((url, hint))
 
-    if app.get("id") in KNOWN_ICONS:
-        add(KNOWN_ICONS[app["id"]], "known")
     for u in ([app["iconUrl"]] if app.get("iconUrl") else []):
         add(u, "catalog")
     for page in filter(None, [app.get("iconPage"), app.get("homepage"), app.get("webUrl")]):
@@ -138,6 +122,8 @@ def normalize(img, full):
 def main():
     catalog = json.loads((ROOT / "ui" / "catalog.json").read_text(encoding="utf-8"))
     OUT.mkdir(parents=True, exist_ok=True)
+    index_file = OUT / "index.json"
+    previous = json.loads(index_file.read_text(encoding="utf-8")) if index_file.exists() else {}
     index, missing = {}, []
     for app in catalog["apps"]:
         print(f"[{app['id']}] {app['name']}")
@@ -155,15 +141,20 @@ def main():
             if best is None or score > best[0]:
                 best = (score, img, url)
         if best is None:
-            print("  × 没有找到可用图标")
-            missing.append(app["id"])
+            # 这次没抓到（网站临时不可用等）：保留上一次的图标，不让它退回文字头像
+            if app["id"] in previous and (OUT / f"{app['id']}.png").exists():
+                index[app["id"]] = previous[app["id"]]
+                print("  · 没有抓到新图标，保留原有图标")
+            else:
+                print("  × 没有找到可用图标")
+                missing.append(app["id"])
             continue
         img = best[1]
         full = is_full_bleed(img)
         normalize(img, full).save(OUT / f"{app['id']}.png", optimize=True)
         index[app["id"]] = {"full": full, "source": best[2]}
         print(f"  ✓ {best[2]}（{'满版' if full else '透明底'}）")
-    (OUT / "index.json").write_text(json.dumps(index, ensure_ascii=False, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+    index_file.write_text(json.dumps(index, ensure_ascii=False, indent=1, sort_keys=True) + "\n", encoding="utf-8")
     print(f"\n完成：{len(index)}/{len(catalog['apps'])}，未找到：{', '.join(missing) or '无'}")
     return 0
 

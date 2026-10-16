@@ -167,7 +167,7 @@ async function main() {
   await page.getByRole('button', { name: /软件库/ }).click();
   await shot(page, 'library');
   await page.getByRole('button', { name: '本地运行' }).click();
-  check(await page.locator('.card').count() === 5, '本地运行分类有 5 款');
+  check(await page.locator('.card').count() === 6, '本地运行分类有 6 款');
   await page.getByRole('button', { name: '全部' }).first().click();
   await page.fill('#lib-search', '知识库');
   check(await page.locator('.card').count() >= 2, '按用途关键字搜索');

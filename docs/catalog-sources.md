@@ -28,10 +28,10 @@
 | GPT4All | 本地运行 | winget `nomic.gpt4all` | Nomic · 3.10.0 |
 | Jan | 本地运行 | winget `Jan.Jan` | Jan · 0.8.6 |
 | AnythingLLM | 本地运行 | 官网下载 | winget 中未收录 |
-| 可灵 AI | 国内可用 | 网页版 klingai.kuaishou.com | 快手 · 视频生成大模型 |
-| 海螺 AI | 国内可用 | 网页版 hailuoai.com | MiniMax · Video-01 视频与拟真语音 |
-| 腾讯 WorkBuddy | 国内可用 | 官网下载 workbuddy.cn | 腾讯 · 全场景 AI 智能体工作台 |
-| 腾讯 Ardot | 国内可用 | 网页版 ardot.tencent.com | 腾讯 · AI 原生设计与协同平台 |
+| 可灵 AI | 国内可用 | 网页版 klingai.kuaishou.com | 快手 |
+| 海螺 AI | 国内可用 | 网页版 hailuoai.com | MiniMax |
+| 腾讯 WorkBuddy | 国内可用 | winget `Tencent.WorkBuddy` | Tencent Technology (Shenzhen) · 5.6.2 |
+| 腾讯 Ardot | 国内可用 | 网页版 ardot.tencent.com | 腾讯 |
 | Notion | 需海外网络 | winget `Notion.Notion` | Notion Labs, Inc · 7.38.1 |
 | Obsidian | 本地运行 | winget `Obsidian.Obsidian` | Dynalist Inc. · 1.14.4 |
 
