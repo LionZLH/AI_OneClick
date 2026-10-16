@@ -84,8 +84,8 @@
   "source": "https://metaso.cn/apple-touch-icon.png"
  },
  "notion": {
-  "full": false,
-  "source": "https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/notion.png"
+  "full": true,
+  "source": "https://www.notion.so/images/logo-ios.png"
  },
  "obsidian": {
   "full": false,
